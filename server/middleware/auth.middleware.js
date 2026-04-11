@@ -1,59 +1,31 @@
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const LocalStrategy = require('passport-local').Strategy;
+const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');
 
-// Local Strategy
-passport.use(new LocalStrategy(
-  { usernameField: 'email' },
-  async (email, password, done) => {
-    try {
-      const user = await User.findOne({ email }).select('+password');
-      if (!user || user.authProvider !== 'local') {
-        return done(null, false, { message: 'Invalid credentials' });
-      }
-      const isMatch = await user.matchPassword(password);
-      if (!isMatch) return done(null, false, { message: 'Invalid credentials' });
-      return done(null, user);
-    } catch (err) {
-      return done(err);
-    }
+// Protect middleware — verifies JWT from HttpOnly cookie
+const protect = async (req, res, next) => {
+  const token = req.cookies?.edureach_token;
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
   }
-));
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'User not found' });
+    }
+    req.user = user;
+    next();
+  } catch (err) {
+    return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+  }
+};
 
-// Google Strategy
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: '/api/auth/google/callback'
-},
-  async (accessToken, refreshToken, profile, done) => {
-    try {
-      let user = await User.findOne({ googleId: profile.id });
-      if (!user) {
-        // Check if email already exists with local auth
-        user = await User.findOne({ email: profile.emails[0].value });
-        if (user) {
-          // Link Google to existing account
-          user.googleId = profile.id;
-          user.avatar = user.avatar || profile.photos[0].value;
-          await user.save();
-        } else {
-          // Brand new user via Google
-          user = await User.create({
-            name: profile.displayName,
-            email: profile.emails[0].value,
-            googleId: profile.id,
-            avatar: profile.photos[0].value,
-            authProvider: 'google',
-            isProfileComplete: false,
-            role: null
-          });
-        }
-      }
-      return done(null, user);
-    } catch (err) {
-      return done(err);
-    }
+// Role guard — use after protect
+const requireRole = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user?.role)) {
+    return res.status(403).json({ success: false, message: 'Access denied: insufficient role' });
   }
-));
+  next();
+};
+
+module.exports = { protect, requireRole };

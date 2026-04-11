@@ -8,62 +8,52 @@ import {
   RoleRedirect,
 } from '../components/shared/ProtectedRoute';
 
-// Auth
+// Auth pages  (in features/auth/)
 import LoginPage      from '../features/auth/LoginPage';
 import RegisterPage   from '../features/auth/RegisterPage';
 import OnboardingPage from '../features/auth/OnboardingPage';
 import OAuthCallback  from '../features/auth/OAuthCallback';
 
-// Public (guest-accessible) pages
-import BrowseTutorsPage from '../features/public/BrowseTutorsPage';
-import TutorProfilePage from '../features/public/TutorProfilePage';
+// Public pages — NOTE: these files are in components/public/ in your repo
+import BrowseTutorsPage from '../components/public/BrowseTutorsPage';
+import TutorProfilePage from '../components/public/TutorProfilePage';
 
-// Protected dashboards
-import StudentDashboard from '../features/student/StudentDashboard';
-import TutorDashboard   from '../features/tutor/TutorDashboard';
-import NgoDashboard     from '../features/ngo/NgoDashboard';
+// Protected dashboards — in components/student|tutor|ngo/
+import StudentDashboard from '../components/student/StudentDashboard';
+import TutorDashboard   from '../components/tutor/TutorDashboard';
+import NgoDashboard     from '../components/ngo/NgoDashboard';
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* ── Public landing ─────────────────────────────── */}
+          {/* Root → browse */}
           <Route path="/" element={<Navigate to="/browse" replace />} />
 
-          {/* ── Guest only (redirect if logged in) ─────────── */}
+          {/* Guest only */}
           <Route path="/login"    element={<GuestRoute><LoginPage /></GuestRoute>} />
           <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
 
-          {/* ── OAuth callback ─────────────────────────────── */}
+          {/* OAuth callback */}
           <Route path="/auth/callback" element={<OAuthCallback />} />
 
-          {/* ── Onboarding (logged in, profile incomplete) ─── */}
+          {/* Onboarding */}
           <Route path="/onboarding" element={<OnboardingRoute><OnboardingPage /></OnboardingRoute>} />
 
-          {/* ── PUBLIC pages (guests + logged-in users) ─────── */}
-          {/* Guests can browse tutors. Login required to book. */}
-          <Route path="/browse"         element={<PublicRoute><BrowseTutorsPage /></PublicRoute>} />
-          <Route path="/tutor/:id"      element={<PublicRoute><TutorProfilePage /></PublicRoute>} />
+          {/* Public (guest + logged-in) */}
+          <Route path="/browse"    element={<PublicRoute><BrowseTutorsPage /></PublicRoute>} />
+          <Route path="/tutor/:id" element={<PublicRoute><TutorProfilePage /></PublicRoute>} />
 
-          {/* ── Role-based redirect hub ─────────────────────── */}
+          {/* Role redirect hub */}
           <Route path="/dashboard" element={<ProtectedRoute><RoleRedirect /></ProtectedRoute>} />
 
-          {/* ── Protected dashboards ────────────────────────── */}
-          <Route
-            path="/student/*"
-            element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>}
-          />
-          <Route
-            path="/tutor/*"
-            element={<ProtectedRoute allowedRoles={['tutor']}><TutorDashboard /></ProtectedRoute>}
-          />
-          <Route
-            path="/ngo/*"
-            element={<ProtectedRoute allowedRoles={['ngo','admin']}><NgoDashboard /></ProtectedRoute>}
-          />
+          {/* Protected dashboards */}
+          <Route path="/student/*" element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>} />
+          <Route path="/tutor-dash/*" element={<ProtectedRoute allowedRoles={['tutor']}><TutorDashboard /></ProtectedRoute>} />
+          <Route path="/ngo/*"     element={<ProtectedRoute allowedRoles={['ngo','admin']}><NgoDashboard /></ProtectedRoute>} />
 
-          {/* ── 404 ─────────────────────────────────────────── */}
+          {/* 404 */}
           <Route path="*" element={<Navigate to="/browse" replace />} />
         </Routes>
       </AuthProvider>

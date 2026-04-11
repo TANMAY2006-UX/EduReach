@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
+// ── Loading screen ────────────────────────────────────────────
 export function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white">
@@ -8,7 +9,7 @@ export function LoadingScreen() {
         <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center">
           <span className="text-white font-bold text-lg">E</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-bounce [animation-delay:0ms]" />
           <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-bounce [animation-delay:150ms]" />
           <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-bounce [animation-delay:300ms]" />
@@ -18,10 +19,7 @@ export function LoadingScreen() {
   );
 }
 
-/**
- * ProtectedRoute — must be logged in AND profile complete.
- * Optionally restrict to specific roles.
- */
+// ── ProtectedRoute — must be logged in + profile complete ─────
 export function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -35,9 +33,7 @@ export function ProtectedRoute({ children, allowedRoles }) {
   return children;
 }
 
-/**
- * OnboardingRoute — logged in but profile NOT yet complete.
- */
+// ── OnboardingRoute — logged in but profile NOT complete ──────
 export function OnboardingRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <LoadingScreen />;
@@ -46,10 +42,7 @@ export function OnboardingRoute({ children }) {
   return children;
 }
 
-/**
- * GuestRoute — only for logged-out users.
- * Logged-in users are redirected to dashboard (or original destination).
- */
+// ── GuestRoute — only for logged-out users ───────────────────
 export function GuestRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -62,24 +55,19 @@ export function GuestRoute({ children }) {
   return children;
 }
 
-/**
- * PublicRoute — accessible by everyone (guests AND logged-in users).
- * Used for tutor browse, subject pages, etc.
- */
+// ── PublicRoute — accessible by everyone ────────────────────
 export function PublicRoute({ children }) {
   return children;
 }
 
-/**
- * RoleRedirect — smart redirect after login based on role.
- */
+// ── RoleRedirect — routes user to their dashboard ───────────
 export function RoleRedirect() {
   const { user } = useAuth();
   const map = {
     student: '/student/dashboard',
-    tutor:   '/tutor/dashboard',
+    tutor:   '/tutor-dash/dashboard',
     ngo:     '/ngo/dashboard',
-    admin:   '/admin/dashboard',
+    admin:   '/ngo/dashboard',
   };
   return <Navigate to={map[user?.role] || '/onboarding'} replace />;
 }
