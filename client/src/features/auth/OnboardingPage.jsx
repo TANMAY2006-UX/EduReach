@@ -69,15 +69,15 @@ function StepBar({ current, total }) {
         return (
           <div key={i} className="flex items-center gap-2">
             <div className={`
-              flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold transition-all duration-200
-              ${done   ? 'bg-blue-600 text-white'
-              : active ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                       : 'bg-gray-100 text-gray-400'}
+              flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all duration-200 border-2
+              ${done   ? 'bg-blue-600 border-blue-600 text-white shadow-[2px_2px_0px_0px_#93C5FD]'
+              : active ? 'bg-white border-blue-600 text-blue-600 shadow-[2px_2px_0px_0px_#93C5FD]'
+                       : 'bg-gray-50 border-gray-200 text-gray-400'}
             `}>
               {done ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : i + 1}
             </div>
             {i < total - 1 && (
-              <div className={`h-px w-10 sm:w-16 transition-all duration-300 ${done ? 'bg-blue-600' : 'bg-gray-200'}`} />
+              <div className={`h-1 w-10 sm:w-16 rounded-full transition-all duration-300 ${done ? 'bg-blue-600' : 'bg-gray-200'}`} />
             )}
           </div>
         );
@@ -89,7 +89,7 @@ function StepBar({ current, total }) {
 // ─── Reusable field components ───────────────────────────────
 function FieldLabel({ children, required }) {
   return (
-    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+    <label className="block text-sm font-bold text-gray-700 mb-2">
       {children}
       {required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
@@ -102,7 +102,7 @@ function Input({ icon: Icon, ...props }) {
       {Icon && <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />}
       <input
         {...props}
-        className={`w-full h-11 ${Icon ? 'pl-10' : 'pl-3.5'} pr-3.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all`}
+        className={`w-full h-12 ${Icon ? 'pl-10' : 'pl-3.5'} pr-3.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white shadow-[3px_3px_0px_0px_#D1D5DB] focus:shadow-[3px_3px_0px_0px_#93C5FD] focus:-translate-y-0.5 transition-all`}
       />
     </div>
   );
@@ -114,7 +114,7 @@ function Select({ icon: Icon, children, ...props }) {
       {Icon && <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />}
       <select
         {...props}
-        className={`w-full h-11 ${Icon ? 'pl-10' : 'pl-3.5'} pr-8 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer`}
+        className={`w-full h-12 ${Icon ? 'pl-10' : 'pl-3.5'} pr-8 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white shadow-[3px_3px_0px_0px_#D1D5DB] focus:shadow-[3px_3px_0px_0px_#93C5FD] focus:-translate-y-0.5 transition-all appearance-none cursor-pointer`}
       >
         {children}
       </select>
@@ -134,7 +134,7 @@ function PillSelect({ options, selected, onChange, max }) {
     }
   };
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 pt-1">
       {options.map(opt => {
         const active = selected.includes(opt);
         return (
@@ -142,10 +142,10 @@ function PillSelect({ options, selected, onChange, max }) {
             key={opt}
             type="button"
             onClick={() => toggle(opt)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 ${
+            className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-all duration-150 ${
               active
-                ? 'bg-blue-600 border-blue-600 text-white'
-                : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'
+                ? 'bg-blue-600 border-blue-600 text-white shadow-[2px_2px_0px_0px_#93C5FD] -translate-y-0.5'
+                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_0px_#D1D5DB]'
             }`}
           >
             {opt}
@@ -262,42 +262,43 @@ export default function OnboardingPage() {
   const locationStep = isTutor ? 3 : 2;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#f8f9fc] flex flex-col">
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+      <header className="bg-white border-b-2 border-gray-100 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl bg-blue-600 border-2 border-blue-700 flex items-center justify-center shadow-[2px_2px_0px_0px_#93C5FD]">
             <span className="text-white font-bold text-base leading-none">E</span>
           </div>
-          <span className="text-gray-900 font-semibold text-base tracking-tight">EduReach</span>
+          <span className="text-gray-900 font-bold text-base tracking-tight">EduReach</span>
         </div>
-        <span className="text-xs text-gray-400 font-medium">
+        <span className="text-xs text-gray-500 font-bold bg-gray-100 px-3 py-1.5 rounded-full border-2 border-gray-200">
           Hi, {user?.name?.split(' ')[0]} 👋
         </span>
       </header>
 
       {/* Main */}
-      <main className="flex-1 flex items-start justify-center px-4 py-10">
-        <div className="w-full max-w-[520px]">
-
+      <main className="flex-1 flex items-start justify-center px-4 py-8">
+        {/* We added a white background, border, padding, and tactile shadow here to ground the page! */}
+        <div className="w-full max-w-[560px] bg-white border-2 border-gray-200 rounded-3xl p-6 sm:p-10 shadow-[6px_6px_0px_0px_#D1D5DB] relative my-auto">
+          
           <StepBar current={step} total={TOTAL_STEPS} />
 
           {/* Error banner */}
           {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-6">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="flex items-center gap-2 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3 mb-6 shadow-[3px_3px_0px_0px_#fca5a5]">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+              <p className="text-sm font-bold text-red-700">{error}</p>
             </div>
           )}
 
           {/* ─── STEP 0: Role selection ───────────────────── */}
           {step === 0 && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-1.5">Who are you joining as?</h2>
-              <p className="text-sm text-gray-500 mb-7">This shapes your entire experience. You can change this later.</p>
+            <div className="animate-fade-up">
+              <h2 className="text-[28px] font-black text-gray-900 tracking-tight mb-2">Who are you joining as?</h2>
+              <p className="text-sm font-medium text-gray-500 mb-8">This shapes your entire experience. You can change this later.</p>
 
-              <div className="space-y-3 mb-8">
+              <div className="space-y-4 mb-8">
                 {ROLES.map(({ id, icon: Icon, title, desc, color }) => {
                   const active = data.role === id;
                   return (
@@ -305,25 +306,25 @@ export default function OnboardingPage() {
                       key={id}
                       type="button"
                       onClick={() => set('role', id)}
-                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-150 ${
+                      className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 text-left transition-all duration-200 ${
                         active
-                          ? 'border-blue-600 bg-blue-50 shadow-sm'
-                          : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                          ? 'border-blue-600 bg-blue-50 shadow-[4px_4px_0px_0px_#93C5FD] -translate-y-1'
+                          : 'border-gray-200 bg-white hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_#D1D5DB] hover:border-gray-300'
                       }`}
                     >
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                        active ? 'bg-blue-600' : 'bg-gray-100'
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 border-2 ${
+                        active ? 'bg-blue-600 border-blue-700 shadow-[2px_2px_0px_0px_#93C5FD]' : 'bg-gray-50 border-gray-200'
                       }`}>
-                        <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-gray-500'}`} />
+                        <Icon className={`w-6 h-6 ${active ? 'text-white' : 'text-gray-500'}`} />
                       </div>
                       <div className="flex-1">
-                        <p className={`text-sm font-semibold ${active ? 'text-blue-700' : 'text-gray-900'}`}>{title}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                        <p className={`text-base font-bold ${active ? 'text-blue-800' : 'text-gray-900'}`}>{title}</p>
+                        <p className={`text-sm font-medium mt-0.5 ${active ? 'text-blue-600' : 'text-gray-500'}`}>{desc}</p>
                       </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                        active ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        active ? 'border-blue-600 bg-blue-600 shadow-[1px_1px_0px_0px_#93C5FD]' : 'border-gray-300'
                       }`}>
-                        {active && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                        {active && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
                       </div>
                     </button>
                   );
@@ -336,14 +337,13 @@ export default function OnboardingPage() {
 
           {/* ─── STEP 1: Profile info (role-adaptive) ─────── */}
           {step === 1 && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-1.5">
+            <div className="animate-fade-up">
+              <h2 className="text-[28px] font-black text-gray-900 tracking-tight mb-2">
                 {isTutor ? 'Your teaching profile' : isStudent ? 'About your studies' : 'Organisation details'}
               </h2>
-              <p className="text-sm text-gray-500 mb-7">All fields marked with * are required.</p>
+              <p className="text-sm font-medium text-gray-500 mb-8">All fields marked with * are required.</p>
 
-              <div className="space-y-5">
-                {/* Phone — required for all */}
+              <div className="space-y-6">
                 <div>
                   <FieldLabel required>Phone number</FieldLabel>
                   <Input
@@ -353,14 +353,13 @@ export default function OnboardingPage() {
                     value={data.phone}
                     onChange={e => set('phone', e.target.value)}
                   />
-                  <p className="text-xs text-gray-400 mt-1">Used only for secure in-platform communication</p>
+                  <p className="text-xs font-bold text-gray-400 mt-2">Used only for secure in-platform communication</p>
                 </div>
 
-                {/* Subjects — multi select, max 5 */}
                 <div>
                   <FieldLabel required>
                     {isTutor ? 'Subjects you teach' : 'Subjects you need help with'}
-                    <span className="ml-1 text-xs font-normal text-gray-400">(select up to 5)</span>
+                    <span className="ml-1 text-xs font-bold text-gray-400">(select up to 5)</span>
                   </FieldLabel>
                   <PillSelect
                     options={SUBJECTS}
@@ -370,7 +369,6 @@ export default function OnboardingPage() {
                   />
                 </div>
 
-                {/* Student-only fields */}
                 {isStudent && (
                   <>
                     <div>
@@ -397,7 +395,6 @@ export default function OnboardingPage() {
                   </>
                 )}
 
-                {/* NGO-only: organisation name */}
                 {data.role === 'ngo' && (
                   <div>
                     <FieldLabel required>Organisation name</FieldLabel>
@@ -416,11 +413,11 @@ export default function OnboardingPage() {
 
           {/* ─── STEP 2 (tutor only): Experience & Bio ────── */}
           {step === 2 && isTutor && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-1.5">Your teaching credentials</h2>
-              <p className="text-sm text-gray-500 mb-7">This helps students trust and choose you. Be honest and specific.</p>
+            <div className="animate-fade-up">
+              <h2 className="text-[28px] font-black text-gray-900 tracking-tight mb-2">Your teaching credentials</h2>
+              <p className="text-sm font-medium text-gray-500 mb-8">This helps students trust and choose you. Be honest and specific.</p>
 
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div>
                   <FieldLabel required>Teaching experience</FieldLabel>
                   <Select
@@ -450,22 +447,22 @@ export default function OnboardingPage() {
                 <div>
                   <FieldLabel required>
                     Short bio
-                    <span className="ml-1 text-xs font-normal text-gray-400">
+                    <span className="ml-1 text-xs font-bold text-gray-400">
                       ({data.bio.length}/300)
                     </span>
                   </FieldLabel>
                   <div className="relative">
-                    <FileText className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-400" />
+                    <FileText className="absolute left-3.5 top-4 w-4 h-4 text-gray-400" />
                     <textarea
                       rows={4}
                       maxLength={300}
                       placeholder="Tell students about your teaching style, achievements, and what makes your sessions special..."
                       value={data.bio}
                       onChange={e => set('bio', e.target.value)}
-                      className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all resize-none"
+                      className="w-full pl-10 pr-3.5 py-3.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white shadow-[3px_3px_0px_0px_#D1D5DB] focus:shadow-[3px_3px_0px_0px_#93C5FD] focus:-translate-y-0.5 transition-all resize-none"
                     />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Minimum 30 characters</p>
+                  <p className="text-xs font-bold text-gray-400 mt-2">Minimum 30 characters</p>
                 </div>
               </div>
 
@@ -475,15 +472,15 @@ export default function OnboardingPage() {
 
           {/* ─── LOCATION STEP (last for all) ─────────────── */}
           {step === locationStep && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-1.5">Where are you located?</h2>
-              <p className="text-sm text-gray-500 mb-7">
+            <div className="animate-fade-up">
+              <h2 className="text-[28px] font-black text-gray-900 tracking-tight mb-2">Where are you located?</h2>
+              <p className="text-sm font-medium text-gray-500 mb-8">
                 {isTutor
                   ? 'Students near you will see your profile first.'
                   : 'We use this to show you tutors closest to your area.'}
               </p>
 
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div>
                   <FieldLabel required>City</FieldLabel>
                   <Select
@@ -508,9 +505,9 @@ export default function OnboardingPage() {
                 </div>
 
                 {/* Summary card */}
-                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
-                  <p className="text-xs font-semibold text-blue-700 mb-3 uppercase tracking-wider">Profile summary</p>
-                  <div className="space-y-2">
+                <div className="bg-white border-2 border-gray-200 rounded-2xl p-5 shadow-[4px_4px_0px_0px_#D1D5DB] mt-2">
+                  <p className="text-xs font-black text-gray-400 mb-4 uppercase tracking-wider">Profile summary</p>
+                  <div className="space-y-3">
                     <SummaryRow label="Role"     value={ROLES.find(r => r.id === data.role)?.title} />
                     <SummaryRow label="Subjects"  value={data.subjects.join(', ') || '—'} />
                     {isStudent && <SummaryRow label="Grade"  value={data.grade || '—'} />}
@@ -534,12 +531,12 @@ export default function OnboardingPage() {
 // ── Nav button row ────────────────────────────────────────────
 function NavButtons({ onNext, onBack, isFirst, isLast, loading }) {
   return (
-    <div className={`flex gap-3 mt-8 ${isFirst ? 'justify-end' : 'justify-between'}`}>
+    <div className={`flex gap-4 mt-10 ${isFirst ? 'justify-end' : 'justify-between'}`}>
       {!isFirst && (
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 px-5 h-11 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900 transition-all"
+          className="flex items-center gap-1.5 px-6 h-12 rounded-xl border-2 border-gray-200 bg-white text-[13px] font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#D1D5DB] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all"
         >
           <ChevronLeft className="w-4 h-4" /> Back
         </button>
@@ -548,13 +545,13 @@ function NavButtons({ onNext, onBack, isFirst, isLast, loading }) {
         type="button"
         onClick={onNext}
         disabled={loading}
-        className="flex items-center gap-2 px-6 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold transition-all shadow-sm shadow-blue-200"
+        className="flex items-center gap-2 px-8 h-12 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-[13px] font-bold uppercase tracking-wide transition-all shadow-[4px_4px_0px_0px_#93C5FD] active:translate-y-[3px] active:translate-x-[3px] active:shadow-[0px_0px_0px_0px_#93C5FD]"
       >
         {loading
           ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           : isLast
-            ? <><Check className="w-4 h-4 stroke-[2.5]" /> Complete setup</>
-            : <>Continue <ChevronRight className="w-4 h-4" /></>
+            ? <><Check className="w-4 h-4 stroke-[3]" /> Complete setup</>
+            : <>Continue <ChevronRight className="w-4 h-4 stroke-[3]" /></>
         }
       </button>
     </div>
@@ -563,9 +560,9 @@ function NavButtons({ onNext, onBack, isFirst, isLast, loading }) {
 
 function SummaryRow({ label, value }) {
   return (
-    <div className="flex items-baseline gap-2">
-      <span className="text-xs text-blue-500/70 font-medium w-24 flex-shrink-0">{label}</span>
-      <span className="text-xs text-blue-900 font-medium truncate">{value || '—'}</span>
+    <div className="flex items-baseline gap-3">
+      <span className="text-[13px] text-gray-500 font-bold w-24 flex-shrink-0">{label}</span>
+      <span className="text-[13px] text-gray-900 font-bold truncate">{value || '—'}</span>
     </div>
   );
 }
