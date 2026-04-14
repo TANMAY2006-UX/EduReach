@@ -1,9 +1,6 @@
 const TutorProfile = require('../models/TutorProfile.model');
 const User         = require('../models/User.model');
 
-// ── Area → approximate coordinates map for Mumbai ─────────────
-// Used when we don't have a precise GPS coordinate from onboarding.
-// Format: [longitude, latitude]
 const AREA_COORDS = {
   'Andheri East':        [72.8697, 19.1136],
   'Andheri West':        [72.8394, 19.1196],
@@ -27,41 +24,20 @@ const AREA_COORDS = {
   'Vashi (Navi Mumbai)': [73.0069, 19.0771],
   'Vikhroli':            [72.9227, 19.1080],
   'Worli':               [72.8175, 19.0132],
-  'Mumbai':              [72.8777, 19.0760], // fallback: city centre
+  'Mumbai':              [72.8777, 19.0760],
 };
 
-const getCoords = (area, city) => {
-  return AREA_COORDS[area] || AREA_COORDS[city] || [72.8777, 19.0760];
-};
+const getCoords = (area, city) => AREA_COORDS[area] || AREA_COORDS[city] || [72.8777, 19.0760];
 
-// ──────────────────────────────────────────────────────────────
 // GET /api/tutors
-// Public. Supports: search, subject, area, page, limit, sort
-// ──────────────────────────────────────────────────────────────
 exports.getTutors = async (req, res) => {
   try {
-    const {
-      search  = '',
-      subject = '',
-      area    = '',
-      sort    = 'rating',   // rating | newest | reviews
-      page    = 1,
-      limit   = 12,
-    } = req.query;
-
+    const { search = '', subject = '', area = '', sort = 'rating', page = 1, limit = 12 } = req.query;
     const query = { isActive: true };
 
-    // Subject filter
-    if (subject) {
-      query.subjects = { $in: [new RegExp(subject, 'i')] };
-    }
+    if (subject) query.subjects = { $in: [new RegExp(subject, 'i')] };
+    if (area)    query.area     = new RegExp(area, 'i');
 
-    // Area filter
-    if (area) {
-      query.area = new RegExp(area, 'i');
-    }
-
-    // Text search (name, bio, subjects)
     let results;
     if (search.trim()) {
       results = await TutorProfile.find(
@@ -88,81 +64,27 @@ exports.getTutors = async (req, res) => {
     }
 
     const total = await TutorProfile.countDocuments(query);
-
-    res.json({
-      success: true,
-      tutors: results,
-      pagination: {
-        total,
-        page: Number(page),
-        limit: Number(limit),
-        pages: Math.ceil(total / limit),
-      },
-    });
+    res.json({ success: true, tutors: results, pagination: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / limit) } });
   } catch (err) {
     console.error('[TUTOR] getTutors error:', err.message);
     res.status(500).json({ success: false, message: 'Failed to fetch tutors' });
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// GET /api/tutors/:id
-// Public. Returns full tutor profile including recent reviews.
-// ──────────────────────────────────────────────────────────────
-exports.getTutorById = async (req, res) => {
-  try {
-    const tutor = await TutorProfile.findById(req.params.id)
-      .select('-verificationDocs -__v')
-      .lean();
-
-    if (!tutor) {
-      return res.status(404).json({ success: false, message: 'Tutor not found' });
-    }
-
-    // Return only the 10 most recent reviews
-    if (tutor.reviews) {
-      tutor.reviews = tutor.reviews
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 10);
-    }
-
-    res.json({ success: true, tutor });
-  } catch (err) {
-    console.error('[TUTOR] getTutorById error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to fetch tutor' });
-  }
-};
-
-// ──────────────────────────────────────────────────────────────
-// GET /api/tutors/nearby?lat=&lng=&radius=&subject=
-// Public. Returns tutors within radius (metres) sorted by distance.
-// ──────────────────────────────────────────────────────────────
+// GET /api/tutors/nearby
 exports.getNearbyTutors = async (req, res) => {
   try {
-    const {
-      lat     = 19.0760,
-      lng     = 72.8777,
-      radius  = 15000,    // 15 km default
-      subject = '',
-      limit   = 8,
-    } = req.query;
-
+    const { lat = 19.0760, lng = 72.8777, radius = 15000, subject = '', limit = 8 } = req.query;
     const geoQuery = {
       isActive: true,
       geoLocation: {
         $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [Number(lng), Number(lat)],
-          },
+          $geometry: { type: 'Point', coordinates: [Number(lng), Number(lat)] },
           $maxDistance: Number(radius),
         },
       },
     };
-
-    if (subject) {
-      geoQuery.subjects = { $in: [new RegExp(subject, 'i')] };
-    }
+    if (subject) geoQuery.subjects = { $in: [new RegExp(subject, 'i')] };
 
     const tutors = await TutorProfile.find(geoQuery)
       .limit(Number(limit))
@@ -171,38 +93,67 @@ exports.getNearbyTutors = async (req, res) => {
 
     res.json({ success: true, tutors });
   } catch (err) {
-    console.error('[TUTOR] getNearbyTutors error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to fetch nearby tutors' });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// GET /api/tutors/me  (tutor's own profile)
-// Protected. Tutor only.
-// ──────────────────────────────────────────────────────────────
+// GET /api/tutors/:id  — full profile including reviews
+exports.getTutorById = async (req, res) => {
+  try {
+    const tutor = await TutorProfile.findById(req.params.id)
+      .select('-verificationDocs -__v')
+      .lean();
+
+    if (!tutor) return res.status(404).json({ success: false, message: 'Tutor not found' });
+
+    if (tutor.reviews) {
+      tutor.reviews = tutor.reviews
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 20);
+    }
+
+    res.json({ success: true, tutor });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// GET /api/tutors/me/profile
 exports.getMyProfile = async (req, res) => {
   try {
     const profile = await TutorProfile.findOne({ user: req.user._id }).lean();
-    if (!profile) {
-      return res.status(404).json({ success: false, message: 'Tutor profile not found' });
-    }
+    if (!profile) return res.status(404).json({ success: false, message: 'Tutor profile not found. Please complete onboarding.' });
     res.json({ success: true, profile });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// PATCH /api/tutors/me  (update own profile)
-// Protected. Tutor only.
-// ──────────────────────────────────────────────────────────────
+// PATCH /api/tutors/me/profile  — FIX: now includes availability
 exports.updateMyProfile = async (req, res) => {
   try {
+    // Whitelist exactly what tutors can update from the dashboard
     const allowed = ['bio', 'subjects', 'availability', 'hourlyRate', 'online', 'offline', 'languages'];
     const updates = {};
     allowed.forEach(key => {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     });
+
+    // Validate availability slots if provided
+    if (updates.availability) {
+      const VALID_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+      const valid = updates.availability.every(slot =>
+        VALID_DAYS.includes(slot.day) &&
+        timeRe.test(slot.start) &&
+        timeRe.test(slot.end) &&
+        slot.start < slot.end
+      );
+      if (!valid) {
+        return res.status(400).json({ success: false, message: 'Invalid availability slots. Check day names and time format (HH:MM).' });
+      }
+    }
 
     const profile = await TutorProfile.findOneAndUpdate(
       { user: req.user._id },
@@ -211,24 +162,19 @@ exports.updateMyProfile = async (req, res) => {
     );
 
     if (!profile) return res.status(404).json({ success: false, message: 'Profile not found' });
-
     res.json({ success: true, profile });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// Internal helper: auto-create TutorProfile when onboarding completes
-// Called from auth.controller.js after completeOnboarding
-// ──────────────────────────────────────────────────────────────
+// Internal: auto-create TutorProfile on onboarding
 exports.createTutorProfile = async (userId, userData) => {
   try {
     const exists = await TutorProfile.findOne({ user: userId });
-    if (exists) return exists; // idempotent
+    if (exists) return exists;
 
     const coords = getCoords(userData.area, userData.city);
-
     const profile = await TutorProfile.create({
       user:          userId,
       name:          userData.name,
@@ -240,16 +186,17 @@ exports.createTutorProfile = async (userId, userData) => {
       grade:         userData.grade         || '',
       city:          userData.city          || 'Mumbai',
       area:          userData.area          || '',
-      geoLocation: {
-        type: 'Point',
-        coordinates: coords,
-      },
-      hourlyRate: 0,
-      trialFree:  true,
-      isVerified: false,
-      isActive:   true,
+      geoLocation:   { type: 'Point', coordinates: coords },
+      hourlyRate:    0,
+      trialFree:     true,
+      isVerified:    false,
+      isActive:      true,
+      // New tutors start with 0 stats — no hardcoded fake reviews
+      rating:       0,
+      totalReviews: 0,
+      totalSessions: 0,
+      totalStudents: 0,
     });
-
     console.log(`[TUTOR] Profile created for user ${userId}`);
     return profile;
   } catch (err) {

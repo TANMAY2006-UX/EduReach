@@ -3,3 +3,5 @@ node_modules/
 .env
 Google secrets.json
 dist/
+EDUREACH_COMPLETE_HANDOFF.md
+NEXT_STEPS_FOR_AGENT.md
