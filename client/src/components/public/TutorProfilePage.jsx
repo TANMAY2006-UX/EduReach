@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import PublicNavbar from '../layout/PublicNavbar';
-import { tutorService, sessionService } from '../../services/tutorService';
+import { tutorService, sessionService, ngoService } from '../../services/tutorService';
+
 import {
   MapPin, Star, CheckCircle, BookOpen, Clock,
   ArrowLeft, Lock, ArrowRight, Shield, Calendar, MessageSquare,
@@ -482,6 +483,64 @@ export default function TutorProfilePage() {
       .catch(() => {});
   }, [isAuthenticated, user, id]);
 
+  // ── NGO: check empanelment status on load ─────────────────────
+  // 'checking' → loading initial state
+  // 'not_empanelled' → tutor not in pool
+  // 'empanelled'     → tutor already in pool
+  // 'loading'        → empanel API call in flight
+  // 'removing'       → remove API call in flight
+  const [empanelStatus, setEmpanelStatus] = useState('checking');
+  const [empanelError,  setEmpanelError]  = useState('');
+
+  useEffect(() => {
+    if (!isAuthenticated || user?.role !== 'ngo' || !id) {
+      setEmpanelStatus('not_empanelled');
+      return;
+    }
+    ngoService.getEmpanelledTutors()
+      .then(data => {
+        const found = (data.tutors || []).some(
+          e => e.tutorProfile?._id?.toString() === id.toString()
+        );
+        setEmpanelStatus(found ? 'empanelled' : 'not_empanelled');
+      })
+      .catch(err => {
+        console.error('[NGO] empanelment check error:', err.message);
+        setEmpanelStatus('not_empanelled');
+      });
+  }, [isAuthenticated, user, id]);
+
+  const handleEmpanel = async () => {
+    setEmpanelStatus('loading');
+    setEmpanelError('');
+    try {
+      await ngoService.empanelTutor(id);
+      setEmpanelStatus('empanelled');
+    } catch (err) {
+      const code = err.response?.data?.code;
+      if (code === 'ALREADY_EMPANELLED') {
+        setEmpanelStatus('empanelled'); // sync to truth
+      } else {
+        setEmpanelError(err.response?.data?.message || 'Failed to add tutor. Try again.');
+        setEmpanelStatus('not_empanelled');
+      }
+    }
+  };
+
+  const handleRemoveEmpanelment = async () => {
+    setEmpanelStatus('removing');
+    setEmpanelError('');
+    try {
+      await ngoService.removeEmpanelment(id);
+      setEmpanelStatus('not_empanelled');
+    } catch (err) {
+      console.error('[NGO] remove empanelment error:', err.message);
+      setEmpanelError(err.response?.data?.message || 'Failed to remove. Try again.');
+      setEmpanelStatus('empanelled');
+    }
+  };
+
+
   if (loading) return (
     <div className="min-h-screen bg-[#f8f9fc]">
       <PublicNavbar />
@@ -510,8 +569,10 @@ export default function TutorProfilePage() {
 
   const initials       = tutor.name.split(' ').map(n => n[0]).join('').toUpperCase();
   const isTutorRole    = isAuthenticated && user?.role === 'tutor';
+  const isNgoRole      = isAuthenticated && user?.role === 'ngo';
   const canBook        = isAuthenticated && user?.role === 'student';
   const displayReviews = reviewsExpanded ? tutor.reviews : tutor.reviews?.slice(0, 4);
+
 
   return (
     <div className="min-h-screen bg-[#f8f9fc] pb-24 lg:pb-8">
@@ -782,6 +843,52 @@ export default function TutorProfilePage() {
                 <div className="bg-gray-50 border-2 border-gray-200 text-gray-500 text-xs font-bold px-4 py-3 rounded-xl text-center">
                   You're viewing this as a tutor. Students can book this session.
                 </div>
+
+              ) : isNgoRole ? (
+                // NGO: empanel / de-empanel this tutor
+                <div className="space-y-3">
+                  {empanelError && (
+                    <div className="flex items-center gap-2 bg-red-50 border-2 border-red-200 rounded-xl px-3 py-2.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                      <p className="text-xs font-bold text-red-700">{empanelError}</p>
+                    </div>
+                  )}
+
+                  {empanelStatus === 'checking' && (
+                    <div className="w-full h-12 flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-green-300 border-t-green-600 rounded-full animate-spin" />
+                    </div>
+                  )}
+
+                  {empanelStatus === 'empanelled' && (
+                    <div className="space-y-2">
+                      <div className="w-full h-12 flex items-center justify-center gap-2 border-2 border-green-500 bg-green-50 text-green-700 font-black text-sm rounded-xl shadow-[3px_3px_0px_0px_#86EFAC]">
+                        <CheckCircle className="w-4 h-4" /> In My Tutor Pool ✓
+                      </div>
+                      <button onClick={handleRemoveEmpanelment}
+                        className="w-full text-center text-xs font-black text-gray-400 hover:text-red-500 transition-colors py-1.5">
+                        Remove from pool
+                      </button>
+                    </div>
+                  )}
+
+                  {(empanelStatus === 'not_empanelled' || empanelStatus === 'loading') && (
+                    <button onClick={handleEmpanel} disabled={empanelStatus === 'loading'}
+                      className="w-full h-12 bg-green-600 hover:bg-green-500 disabled:opacity-60 text-white font-black text-sm uppercase tracking-wide rounded-xl shadow-[4px_4px_0px_0px_#15803d] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-2">
+                      {empanelStatus === 'loading'
+                        ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        : <><Users className="w-4 h-4" /> Add to My Tutors</>
+                      }
+                    </button>
+                  )}
+
+                  {empanelStatus === 'removing' && (
+                    <div className="w-full h-12 flex items-center justify-center gap-2 border-2 border-gray-200 bg-gray-50 text-gray-500 text-sm font-bold rounded-xl">
+                      <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /> Removing...
+                    </div>
+                  )}
+                </div>
+
               ) : canBook ? (
                 <>
                   {alreadyTrialed ? (
@@ -816,6 +923,7 @@ export default function TutorProfilePage() {
                   </p>
                 </div>
               )}
+
 
               <p className="mt-4 flex items-center justify-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                 <Shield className="w-3 h-3" /> Secure booking via EduReach

@@ -42,6 +42,25 @@ const UserSchema = new mongoose.Schema({
   qualification:  { type: String, default: null },    // tutor: highest degree / NGO: org name
   bio:            { type: String, default: null },    // tutor: about section
 
+  // ── NGO-managed beneficiary fields ─────────────────────────
+  // ngoParent: set when an NGO admin creates a student account.
+  // Enables: User.find({ ngoParent: ngoId }) → all beneficiaries.
+  // Null for self-registered students (no data migration needed).
+  ngoParent: {
+    type:    mongoose.Schema.Types.ObjectId,
+    ref:     'User',
+    default: null,
+    index:   true,   // fast cohort lookup
+  },
+
+  // assignedTutor: future-ready — NGO recommends a specific tutor
+  // to a beneficiary. No UI surfaces this yet.
+  assignedTutor: {
+    type:    mongoose.Schema.Types.ObjectId,
+    ref:     'TutorProfile',
+    default: null,
+  },
+
 }, { timestamps: true });
 
 // ── Pre-save: hash password (local auth only) ──────────────

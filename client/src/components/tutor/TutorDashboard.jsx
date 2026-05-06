@@ -2,21 +2,23 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import PublicNavbar from '../layout/PublicNavbar';
-import { sessionService, tutorService } from '../../services/tutorService';
+import { sessionService, tutorService, tutorNgoService } from '../../services/tutorService';
 import EditProfileModal from './EditProfileModal';
 import {
   Star, Calendar, Users, CheckCircle, Clock, XCircle,
   AlertCircle, IndianRupee, MessageSquare, Shield, X,
   Briefcase, Award, MapPin, Edit2, Phone, Video,
-  ExternalLink, Link2, RefreshCw, CalendarClock, AlertTriangle
+  ExternalLink, Link2, RefreshCw, CalendarClock, AlertTriangle,
+  Handshake, CheckSquare, XCircle as XIcon, PhoneCall, Mail,
+  BookOpen
 } from 'lucide-react';
 
 const STATUS = {
-  pending:   { label: 'Pending',   color: 'bg-amber-50 text-amber-700 border-amber-200',  icon: Clock },
-  accepted:  { label: 'Confirmed', color: 'bg-green-50 text-green-700 border-green-200',   icon: CheckCircle },
-  rejected:  { label: 'Declined',  color: 'bg-red-50 text-red-600 border-red-200',         icon: XCircle },
-  completed: { label: 'Completed', color: 'bg-blue-50 text-blue-700 border-blue-200',      icon: CheckCircle },
-  cancelled: { label: 'Cancelled', color: 'bg-gray-50 text-gray-500 border-gray-200',      icon: XCircle },
+  pending: { label: 'Pending', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: Clock },
+  accepted: { label: 'Confirmed', color: 'bg-green-50 text-green-700 border-green-200', icon: CheckCircle },
+  rejected: { label: 'Declined', color: 'bg-red-50 text-red-600 border-red-200', icon: XCircle },
+  completed: { label: 'Completed', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: CheckCircle },
+  cancelled: { label: 'Cancelled', color: 'bg-gray-50 text-gray-500 border-gray-200', icon: XCircle },
 };
 
 function StatusBadge({ status }) {
@@ -42,14 +44,14 @@ function StatCard({ icon: Icon, label, value, sub, color, delay }) {
   );
 }
 
-const STAGGER = ['delay-0','delay-75','delay-100','delay-150','delay-200'];
+const STAGGER = ['delay-0', 'delay-75', 'delay-100', 'delay-150', 'delay-200'];
 
 // ── Meeting link input ─────────────────────────────────────────
 function MeetingLinkInput({ session, onSaved }) {
-  const [link,    setLink]    = useState(session.meetingLink || '');
+  const [link, setLink] = useState(session.meetingLink || '');
   const [loading, setLoading] = useState(false);
-  const [saved,   setSaved]   = useState(!!session.meetingLink);
-  const [error,   setError]   = useState('');
+  const [saved, setSaved] = useState(!!session.meetingLink);
+  const [error, setError] = useState('');
 
   const handleSave = async () => {
     if (!link.trim()) return;
@@ -102,12 +104,12 @@ function MeetingLinkInput({ session, onSaved }) {
 
 // ── Reschedule modal ───────────────────────────────────────────
 function RescheduleModal({ session, onClose, onSaved }) {
-  const student  = session.student;
+  const student = session.student;
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
-  const [note,    setNote]    = useState('');
+  const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+  const [error, setError] = useState('');
 
   const minDate = new Date();
   minDate.setDate(minDate.getDate() + 1);
@@ -185,10 +187,10 @@ function RescheduleModal({ session, onClose, onSaved }) {
 
 // ── Request card ───────────────────────────────────────────────
 function RequestCard({ session, onAccept, onReject, delay }) {
-  const [loading,   setLoading]   = useState(false);
+  const [loading, setLoading] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const student = session.student;
-  const date    = new Date(session.scheduledAt);
+  const date = new Date(session.scheduledAt);
   const isTrial = session.type === 'trial';
 
   const handle = async (action) => {
@@ -240,7 +242,7 @@ function RequestCard({ session, onAccept, onReject, delay }) {
         </button>
         <button onClick={() => handle('accept')} disabled={loading || rejecting}
           className="flex-[2] flex items-center justify-center gap-1.5 h-10 bg-green-600 hover:bg-green-500 text-white text-xs font-black uppercase tracking-wide rounded-xl shadow-[3px_3px_0px_0px_#86EFAC] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all disabled:opacity-50">
-          {loading ? '...' : <><CheckCircle className="w-3.5 h-3.5" /> Accept Session</>}
+          {loading ? '...' : <><CheckCircle className="w-3.5 h-3.5" /> Accept Collaboration</>}
         </button>
       </div>
     </div>
@@ -249,14 +251,14 @@ function RequestCard({ session, onAccept, onReject, delay }) {
 
 // ── Session row (schedule / history) ──────────────────────────
 function SessionRow({ session, onComplete, onReschedule, onMeetingLinkSaved, delay }) {
-  const student  = session.student;
-  const date     = new Date(session.scheduledAt);
-  const isPast   = date < new Date();
-  const isTrial  = session.type === 'trial';
+  const student = session.student;
+  const date = new Date(session.scheduledAt);
+  const isPast = date < new Date();
+  const isTrial = session.type === 'trial';
 
   // ── FIX 2: studentJoinedAt UX state ─────────────────────────────
   const [completeWarning, setCompleteWarning] = useState('');
-  const [completing,      setCompleting]      = useState(false);
+  const [completing, setCompleting] = useState(false);
 
   const handleMarkDone = async () => {
     // For online sessions, the student must have joined via EduReach.
@@ -275,7 +277,7 @@ function SessionRow({ session, onComplete, onReschedule, onMeetingLinkSaved, del
     } catch (err) {
       // Backend STUDENT_NOT_JOINED error — surface clearly
       const code = err.response?.data?.code;
-      const msg  = err.response?.data?.message;
+      const msg = err.response?.data?.message;
       if (code === 'STUDENT_NOT_JOINED') {
         setCompleteWarning(msg || 'Student has not joined yet.');
       } else {
@@ -351,7 +353,7 @@ function SessionRow({ session, onComplete, onReschedule, onMeetingLinkSaved, del
           {student?.phone && (
             <div className="flex items-center gap-2">
               <Phone className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-              <a href={`https://wa.me/91${student.phone.replace(/\D/g,'')}`}
+              <a href={`https://wa.me/91${student.phone.replace(/\D/g, '')}`}
                 target="_blank" rel="noreferrer"
                 className="text-[11px] font-black text-green-700 hover:text-green-900 flex items-center gap-1">
                 WhatsApp {student.name?.split(' ')[0]} <ExternalLink className="w-2.5 h-2.5" />
@@ -369,9 +371,8 @@ function SessionRow({ session, onComplete, onReschedule, onMeetingLinkSaved, del
 
           {/* Student joined indicator (online sessions) */}
           {session.mode === 'online' && (
-            <span className={`text-[10px] font-bold flex items-center gap-1 ${
-              session.studentJoinedAt ? 'text-green-600' : 'text-gray-300'
-            }`}>
+            <span className={`text-[10px] font-bold flex items-center gap-1 ${session.studentJoinedAt ? 'text-green-600' : 'text-gray-300'
+              }`}>
               {session.studentJoinedAt
                 ? <><CheckCircle className="w-3 h-3" /> Student joined via EduReach</>
                 : <><Clock className="w-3 h-3" /> Waiting for student to join…</>}
@@ -408,13 +409,23 @@ function VerificationBanner({ isVerified }) {
 export default function TutorDashboard() {
   const { user } = useAuth();
 
-  const [sessions,        setSessions]        = useState([]);
-  const [profile,         setProfile]         = useState(null);
-  const [loadingSessions, setLoadingSessions]  = useState(true);
-  const [loadingProfile,  setLoadingProfile]   = useState(true);
-  const [activeTab,       setActiveTab]        = useState('requests');
-  const [isEditingProfile,setIsEditingProfile] = useState(false);
-  const [rescheduleTarget,setRescheduleTarget] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [activeTab, setActiveTab] = useState('requests');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [rescheduleTarget, setRescheduleTarget] = useState(null);
+  // NGO collaboration
+  const [ngoRequests, setNgoRequests] = useState([]);
+  const [ngoReqLoading, setNgoReqLoading] = useState(false);
+  const [ngoReqFetched, setNgoReqFetched] = useState(false);
+  const [ngoRespondingId, setNgoRespondingId] = useState(null);
+  const [ngoContactMap, setNgoContactMap] = useState({});
+
+  const [assignments, setAssignments] = useState([]);
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [assignFetched, setAssignFetched] = useState(false);
 
   useEffect(() => {
     sessionService.getTutorSessions()
@@ -450,19 +461,67 @@ export default function TutorDashboard() {
     setSessions(prev => prev.map(s => s._id === id ? { ...s, scheduledAt: newDt.toISOString() } : s));
   };
 
-  const pendingRequests  = sessions.filter(s => s.status === 'pending');
+  const pendingRequests = sessions.filter(s => s.status === 'pending');
   const upcomingSessions = sessions.filter(s => s.status === 'accepted' && new Date(s.scheduledAt) >= new Date());
-  const pastSessions     = sessions.filter(s => ['completed','cancelled','rejected'].includes(s.status));
-  const earnings         = sessions.filter(s => s.status === 'completed').reduce((a, s) => a + (s.amount || 0), 0);
+  const pastSessions = sessions.filter(s => ['completed', 'cancelled', 'rejected'].includes(s.status));
+  const earnings = sessions.filter(s => s.status === 'completed').reduce((a, s) => a + (s.amount || 0), 0);
 
   const TABS = [
-    { key: 'requests',  label: 'Requests',  count: pendingRequests.length },
-    { key: 'upcoming',  label: 'Schedule',  count: upcomingSessions.length },
-    { key: 'past',      label: 'History',   count: pastSessions.length },
+    { key: 'requests', label: 'Requests', count: pendingRequests.length },
+    { key: 'upcoming', label: 'Schedule', count: upcomingSessions.length },
+    { key: 'past', label: 'History', count: pastSessions.length },
+    { key: 'ngo', label: 'NGO Partners', count: ngoRequests.filter(r => r.status === 'pending').length },
   ];
 
-  const tabSessions = activeTab === 'requests' ? pendingRequests
-    : activeTab === 'upcoming' ? upcomingSessions : pastSessions;
+  const fetchNgoRequests = async () => {
+    setNgoReqLoading(true);
+    try {
+      const data = await tutorNgoService.getNgoRequests('all');
+      setNgoRequests(data.requests || []);
+      setNgoReqFetched(true);
+    } catch (err) {
+      console.error('[TUTOR] ngo requests error:', err.message);
+    } finally { setNgoReqLoading(false); }
+  };
+
+  const fetchAssignments = async () => {
+    setAssignLoading(true);
+    try {
+      const data = await tutorNgoService.getAssignments();
+      setAssignments(data.assignments || []);
+      setAssignFetched(true);
+    } catch (err) {
+      console.error('[TUTOR] assignments error:', err.message);
+    } finally {
+      setAssignLoading(false);
+    }
+  };
+
+  // Lazy-load NGO requests tab
+  useEffect(() => {
+    if (activeTab === 'ngo') {
+      if (!ngoReqFetched) fetchNgoRequests();
+      if (!assignFetched) fetchAssignments();
+    }
+  }, [activeTab, ngoReqFetched, assignFetched]);
+
+  const handleNgoRespond = async (requestId, action) => {
+    setNgoRespondingId(requestId);
+    try {
+      const data = await tutorNgoService.respondToRequest(requestId, action);
+      setNgoRequests(prev => prev.map(r => r._id === requestId ? { ...r, status: action === 'accept' ? 'accepted' : 'declined' } : r));
+      if (action === 'accept' && data.ngoContact) {
+        setNgoContactMap(prev => ({ ...prev, [requestId]: data.ngoContact }));
+      }
+    } catch (err) {
+      console.error('[TUTOR] respond error:', err.message);
+    } finally { setNgoRespondingId(null); }
+  };
+
+  const tabSessions = ['requests', 'upcoming', 'past'].includes(activeTab)
+    ? (activeTab === 'requests' ? pendingRequests : activeTab === 'upcoming' ? upcomingSessions : pastSessions)
+    : [];
+  const showSessionsPanel = ['requests', 'upcoming', 'past'].includes(activeTab);
 
   const firstName = user?.name?.split(' ')[0] || 'Tutor';
 
@@ -489,10 +548,10 @@ export default function TutorDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <StatCard icon={Users}       label="Total Students"  value={profile?.totalStudents || 0}                                             color="bg-blue-50 border-blue-200 text-blue-600"    delay="delay-50" />
-          <StatCard icon={CheckCircle} label="Sessions Done"   value={profile?.totalSessions || 0}                                             color="bg-green-50 border-green-200 text-green-600" delay="delay-100" />
-          <StatCard icon={Star}        label="Rating"          value={profile?.rating > 0 ? profile.rating.toFixed(1) : '—'} sub={profile?.totalReviews ? `${profile.totalReviews} reviews` : undefined} color="bg-amber-50 border-amber-200 text-amber-600" delay="delay-150" />
-          <StatCard icon={IndianRupee} label="Earnings"        value={earnings > 0 ? `₹${earnings.toLocaleString('en-IN')}` : '₹0'} sub="Trials are free" color="bg-purple-50 border-purple-200 text-purple-600" delay="delay-200" />
+          <StatCard icon={Users} label="Total Students" value={profile?.totalStudents || 0} color="bg-blue-50 border-blue-200 text-blue-600" delay="delay-50" />
+          <StatCard icon={CheckCircle} label="Sessions Done" value={profile?.totalSessions || 0} color="bg-green-50 border-green-200 text-green-600" delay="delay-100" />
+          <StatCard icon={Star} label="Rating" value={profile?.rating > 0 ? profile.rating.toFixed(1) : '—'} sub={profile?.totalReviews ? `${profile.totalReviews} reviews` : undefined} color="bg-amber-50 border-amber-200 text-amber-600" delay="delay-150" />
+          <StatCard icon={IndianRupee} label="Earnings" value={earnings > 0 ? `₹${earnings.toLocaleString('en-IN')}` : '₹0'} sub="Trials are free" color="bg-purple-50 border-purple-200 text-purple-600" delay="delay-200" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -513,16 +572,18 @@ export default function TutorDashboard() {
                     {tab.key === 'requests' && tab.count > 0 && (
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                     )}
+                    {tab.key === 'ngo' && tab.count > 0 && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                    )}
                   </button>
                 ))}
               </div>
 
               <div className="p-5 space-y-4">
-                {loadingSessions && [...Array(3)].map((_, i) => (
+                {showSessionsPanel && loadingSessions && [...Array(3)].map((_, i) => (
                   <div key={i} className="h-24 bg-gray-50 border-2 border-gray-100 rounded-xl shimmer" />
                 ))}
-
-                {!loadingSessions && tabSessions.length === 0 && (
+                {showSessionsPanel && !loadingSessions && tabSessions.length === 0 && (
                   <div className="flex flex-col items-center py-16 text-center">
                     <div className="w-16 h-16 rounded-3xl bg-gray-50 border-2 border-gray-200 flex items-center justify-center mb-4 shadow-[4px_4px_0px_0px_#E5E7EB]">
                       <Calendar className="w-7 h-7 text-gray-300" />
@@ -535,18 +596,137 @@ export default function TutorDashboard() {
                     </p>
                   </div>
                 )}
-
-                {!loadingSessions && activeTab === 'requests' && pendingRequests.map((s, i) => (
+                {showSessionsPanel && !loadingSessions && activeTab === 'requests' && pendingRequests.map((s, i) => (
                   <RequestCard key={s._id} session={s} onAccept={handleAccept} onReject={handleReject} delay={STAGGER[i % STAGGER.length]} />
                 ))}
-
-                {!loadingSessions && activeTab !== 'requests' && tabSessions.map((s, i) => (
+                {showSessionsPanel && !loadingSessions && activeTab !== 'requests' && tabSessions.map((s, i) => (
                   <SessionRow key={s._id} session={s}
                     onComplete={handleComplete}
                     onReschedule={setRescheduleTarget}
                     onMeetingLinkSaved={handleMeetingLinkSaved}
                     delay={STAGGER[i % STAGGER.length]} />
                 ))}
+                {activeTab === 'ngo' && (
+                  <div className="space-y-4">
+                    {/* Assignments Section */}
+                    {assignments.length > 0 && (
+                      <div className="mt-6">
+                        <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">
+                          Your Active Assignments
+                        </p>
+
+                        <div className="space-y-3">
+                          {assignments.map((a) => (
+                            <div key={a._id} className="bg-white border-2 border-green-200 rounded-2xl p-4">
+
+                              <p className="text-sm font-black text-gray-900">
+                                {a.ngo?.orgName || 'NGO'} • {a.subject}
+                              </p>
+
+                              <p className="text-xs text-gray-500 font-bold mt-1">
+                                {a.grade} • {a.studentCount} students
+                              </p>
+
+                              <p className="text-[11px] text-green-600 font-bold mt-2">
+                                You are assigned to teach this group
+                              </p>
+
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest">NGO Collaboration Requests</p>
+                      <button onClick={fetchNgoRequests} className="flex items-center gap-1 text-[11px] font-black text-gray-400 hover:text-gray-700 transition-colors">
+                        <RefreshCw className="w-3.5 h-3.5" /> Refresh
+                      </button>
+                    </div>
+                    {ngoReqLoading && <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" /></div>}
+                    {!ngoReqLoading && ngoRequests.length === 0 && (
+                      <div className="flex flex-col items-center py-12 text-center">
+                        <Handshake className="w-8 h-8 text-gray-200 mb-3" />
+                        <p className="text-sm font-bold text-gray-500">No NGO requests yet.</p>
+                        <p className="text-xs text-gray-400 mt-1">NGOs can send you collaboration requests from their dashboard.</p>
+                      </div>
+                    )}
+                    {!ngoReqLoading && ngoRequests.map((req, i) => {
+                      const contact = ngoContactMap[req._id] || (req.status === 'accepted' ? req.ngo : null);
+                      return (
+                        <div key={req._id} className={`border-2 rounded-2xl p-4 animate-fade-up ${STAGGER[i % STAGGER.length]} ${req.status === 'pending' ? 'border-amber-200 bg-amber-50/30' :
+                          req.status === 'accepted' ? 'border-green-200 bg-green-50/20' : 'border-gray-200 bg-white opacity-60'
+                          }`}>
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div>
+                              <div className="flex flex-col">
+                                <p className="text-sm font-black text-gray-900 flex items-center gap-1.5">
+                                  <Handshake className="w-3.5 h-3.5 text-blue-600" />
+                                  {req.ngo?.orgName || req.ngo?.name || 'NGO Organisation'}
+                                </p>
+
+                                <p className="text-[11px] text-gray-500 font-bold">
+                                  Requesting collaboration for teaching support
+                                </p>
+
+                                {req.ngo?.city && (
+                                  <p className="text-[10px] text-gray-400 font-bold mt-0.5">
+                                    {req.ngo.city}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border-2 uppercase tracking-wide ${req.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              req.status === 'accepted' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500 border-gray-200'
+                              }`}>{req.status}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            <div className="flex items-center gap-3 text-[11px] font-bold text-gray-500 mb-2">
+                              <span className="flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                {req.studentCount || 'Multiple'} students
+                              </span>
+
+                              {req.targetGrade && (
+                                <span className="flex items-center gap-1">
+                                  <BookOpen className="w-3 h-3" />
+                                  {req.targetGrade}
+                                </span>
+                              )}
+                            </div>
+                            {req.subjects?.map(s => <span key={s} className="text-[10px] font-black px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-full">{s}</span>)}
+                            {req.targetGrade && <span className="text-[10px] font-black px-2 py-0.5 bg-purple-50 text-purple-600 border border-purple-200 rounded-full">{req.targetGrade}</span>}
+                          </div>
+                          {req.message && (
+                            <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 mb-3">
+                              <p className="text-[11px] text-blue-800 font-semibold leading-relaxed">
+                                "{req.message}"
+                              </p>
+                            </div>
+                          )}
+                          {req.status === 'accepted' && contact && (contact.phone || contact.email) && (
+                            <div className="flex flex-wrap items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-3 py-2 mb-3">
+                              <p className="text-[11px] font-black text-green-800 flex items-center gap-1"><Shield className="w-3 h-3" /> Contact:</p>
+                              {contact.phone && <a href={`tel:${contact.phone}`} className="text-[11px] font-black text-green-700 flex items-center gap-1"><PhoneCall className="w-3 h-3" />{contact.phone}</a>}
+                              {contact.email && <a href={`mailto:${contact.email}`} className="text-[11px] font-black text-green-700 flex items-center gap-1"><Mail className="w-3 h-3" />{contact.email}</a>}
+                            </div>
+                          )}
+                          {req.status === 'pending' && (
+                            <div className="flex gap-2 mt-2">
+                              <button onClick={() => handleNgoRespond(req._id, 'accept')} disabled={ngoRespondingId === req._id}
+                                className="flex items-center gap-1.5 text-[11px] font-black text-white bg-green-600 hover:bg-green-500 px-4 py-2 rounded-xl shadow-[2px_2px_0px_0px_#15803d] transition-all disabled:opacity-50">
+                                {ngoRespondingId === req._id ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <CheckSquare className="w-3.5 h-3.5" />} Accept
+                              </button>
+                              <button onClick={() => handleNgoRespond(req._id, 'decline')} disabled={ngoRespondingId === req._id}
+                                className="flex items-center gap-1.5 text-[11px] font-black text-red-600 border-2 border-red-200 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-xl transition-all disabled:opacity-50">
+                                <XIcon className="w-3.5 h-3.5" /> Decline
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -647,7 +827,7 @@ export default function TutorDashboard() {
                     <div key={i} className="p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="flex gap-0.5">
-                          {[1,2,3,4,5].map(s => (
+                          {[1, 2, 3, 4, 5].map(s => (
                             <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
                           ))}
                         </div>

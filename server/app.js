@@ -19,6 +19,8 @@ app.use(passport.initialize());
 app.use('/api/auth',     require('./routes/auth.routes'));
 app.use('/api/tutors',   require('./routes/tutor.routes'));
 app.use('/api/sessions', require('./routes/session.routes'));
+app.use('/api/ngo',      require('./routes/ngo.routes'));
+
 
 // ── Health check ────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

@@ -40,6 +40,33 @@ const SessionSchema = new mongoose.Schema({
 
   reminderSent: { type: Boolean, default: false },
 
+  // ── NGO extensions (additive — null for all existing sessions) —
+  // bookedBy: who initiated this booking.
+  // 'student' = direct marketplace booking (all existing sessions)
+  // 'ngo'     = NGO admin booked on behalf of a beneficiary
+  // 'admin'   = platform admin created this session
+  bookedBy: {
+    type:    String,
+    enum:    ['student', 'ngo', 'admin'],
+    default: 'student',
+  },
+
+  // groupId: links sessions created in the same multi-student NGO booking.
+  // Null for all 1:1 sessions. Future: also used for batch/group sessions.
+  groupId: {
+    type:    mongoose.Schema.Types.ObjectId,
+    default: null,
+    index:   true,
+  },
+
+  // ngoFeedback: NGO-only evaluation field after a trial session.
+  // Does NOT affect student review or tutor public rating.
+  ngoFeedback: {
+    rating:      { type: Number, min: 1, max: 5, default: null },
+    comment:     { type: String, default: '' },
+    submittedAt: { type: Date,   default: null },
+  },
+
   // Auto-expire: 48h after creation if still pending
   autoExpireAt: { type: Date, default: null },
 

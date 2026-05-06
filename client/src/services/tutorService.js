@@ -49,3 +49,104 @@ export const sessionService = {
   cancelSession: (id, reason = '') =>
     api.patch(`/sessions/${id}/cancel`, { reason }).then(r => r.data),
 };
+
+export const ngoService = {
+  // Create a new beneficiary student under this NGO
+  createBeneficiary: (data) =>
+    api.post('/ngo/beneficiary', data).then(r => r.data),
+
+  // List all beneficiaries — paginated, searchable
+  // params: { page, limit, search, subject }
+  getBeneficiaries: (params = {}) =>
+    api.get('/ngo/beneficiaries', { params }).then(r => r.data),
+
+  // KPI stats for dashboard header
+  getStats: () =>
+    api.get('/ngo/stats').then(r => r.data),
+
+  // Session feed across cohort
+  // params: { filter: 'upcoming'|'past'|'all', page, limit, student }
+  getSessions: (params = {}) =>
+    api.get('/ngo/sessions', { params }).then(r => r.data),
+
+  // Trigger CSV download — returns a Blob URL the browser downloads
+  exportCsv: () =>
+    api.get('/ngo/export', { responseType: 'blob' }).then(r => {
+      const url  = URL.createObjectURL(new Blob([r.data], { type: 'text/csv' }));
+      const link = document.createElement('a');
+      link.href  = url;
+      link.download = `EduReach_export_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }),
+
+  // ── Empanelment ───────────────────────────────────────────────────────────
+
+  // GET  /api/ngo/empanelled-tutors — all active tutors in NGO's pool
+  getEmpanelledTutors: (params = {}) =>
+    api.get('/ngo/empanelled-tutors', { params }).then(r => r.data),
+
+  // POST /api/ngo/empanel/:tutorProfileId — add tutor to pool
+  empanelTutor: (tutorProfileId) =>
+    api.post(`/ngo/empanel/${tutorProfileId}`).then(r => r.data),
+
+  // DELETE /api/ngo/empanel/:tutorProfileId — soft-remove from pool
+  removeEmpanelment: (tutorProfileId) =>
+    api.delete(`/ngo/empanel/${tutorProfileId}`).then(r => r.data),
+
+  // ── Legacy: NGO-initiated booking (kept, not used in new flow) ────────────
+
+  bookSession: (data) =>
+    api.post('/ngo/book-session', data).then(r => r.data),
+
+  // ── Legacy: Feedback / evaluation ─────────────────────────────────────────
+
+  addFeedback: (sessionId, rating, comment = '') =>
+    api.patch(`/ngo/sessions/${sessionId}/feedback`, { rating, comment }).then(r => r.data),
+
+  // ── Collaboration system ──────────────────────────────────────────────────
+
+  // POST /api/ngo/collab-request
+  // body: { tutorProfileId, subjects[], targetGrade, frequency?, studentCount?, message? }
+  sendCollabRequest: (data) =>
+    api.post('/ngo/collab-request', data).then(r => r.data),
+
+  // GET /api/ngo/collab-requests?status=pending|accepted|declined|cancelled|all
+  getCollabRequests: (status = 'all') =>
+    api.get('/ngo/collab-requests', { params: { status } }).then(r => r.data),
+
+  // DELETE /api/ngo/collab-request/:id
+  cancelCollabRequest: (requestId) =>
+    api.delete(`/ngo/collab-request/${requestId}`).then(r => r.data),
+
+  // POST /api/ngo/assignment
+  // body: { collabRequestId, grade, subjects[], studentCount?, notes? }
+  createAssignment: (data) =>
+    api.post('/ngo/assignment', data).then(r => r.data),
+
+  // GET /api/ngo/assignments?status=active|ended|all
+  getAssignments: (status = 'active') =>
+    api.get('/ngo/assignments', { params: { status } }).then(r => r.data),
+
+  // PATCH /api/ngo/assignment/:id/end  — body: { reason? }
+  endAssignment: (assignmentId, reason = '') =>
+    api.patch(`/ngo/assignment/${assignmentId}/end`, { reason }).then(r => r.data),
+};
+
+// ── Tutor-side: NGO collaboration ─────────────────────────────────────────────
+// Used by TutorDashboard to manage incoming NGO requests and active assignments.
+
+export const tutorNgoService = {
+  // GET /api/tutors/ngo-requests?status=pending|accepted|declined|all
+  getNgoRequests: (status = 'all') =>
+    api.get('/tutors/ngo-requests', { params: { status } }).then(r => r.data),
+
+  // PATCH /api/tutors/ngo-requests/:id/respond
+  // body: { action: 'accept'|'decline', note?: string }
+  respondToRequest: (requestId, action, note = '') =>
+    api.patch(`/tutors/ngo-requests/${requestId}/respond`, { action, note }).then(r => r.data),
+
+  // GET /api/tutors/assignments — active group assignments for this tutor
+  getAssignments: () =>
+    api.get('/tutors/assignments').then(r => r.data),
+};
