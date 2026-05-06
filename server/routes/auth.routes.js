@@ -8,6 +8,7 @@ const {
   googleCallback,
   completeOnboarding,
   getMe,
+  updateRole,
   logout,
 } = require('../controllers/auth.controller');  // ← plural: controllers
 
@@ -24,6 +25,7 @@ router.get('/google/callback', googleCallback);
 // Protected routes (require valid JWT cookie)
 router.post('/onboarding', protect, completeOnboarding);
 router.get('/me',          protect, getMe);
+router.patch('/role',      protect, updateRole);
 router.post('/logout',     protect, logout);
 
 module.exports = router;

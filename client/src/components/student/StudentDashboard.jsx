@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import PublicNavbar from '../layout/PublicNavbar';
 import { sessionService, tutorService } from '../../services/tutorService';
+import { uploadService } from '../../services/uploadService';
+import VerificationStatusRow from '../shared/VerificationStatusRow';
 import {
   BookOpen, Calendar, Star, Search, Clock, CheckCircle,
   XCircle, ArrowRight, ChevronRight, AlertCircle, Bell,
@@ -347,6 +349,12 @@ export default function StudentDashboard() {
   const [activeTab,       setActiveTab]       = useState('upcoming');
   const [reviewTarget,    setReviewTarget]    = useState(null);
   const [refreshing,      setRefreshing]      = useState(false);
+  const [docsLoading,     setDocsLoading]     = useState(true);
+  const [docStatus,       setDocStatus]       = useState({
+    verificationStatus: 'unsubmitted',
+    verificationNote:   '',
+    documents:          { schoolId: null },
+  });
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -360,6 +368,21 @@ export default function StudentDashboard() {
   }, []);
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
+
+  useEffect(() => {
+    const fetchDocs = async () => {
+      setDocsLoading(true);
+      try {
+        const data = await uploadService.getMyDocuments();
+        setDocStatus(data);
+      } catch (err) {
+        console.error('[DOCS] fetch error:', err.message);
+      } finally {
+        setDocsLoading(false);
+      }
+    };
+    fetchDocs();
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -491,6 +514,34 @@ export default function StudentDashboard() {
             </div>
           </div>
         </div>
+
+        {/* ── VERIFICATION STATUS ────────────────────────────────── */}
+        {!docsLoading && (
+          <div className="mb-8 animate-fade-up delay-75">
+            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-[4px_4px_0px_0px_#E5E7EB]">
+              <h2 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-blue-600" /> Verification Status
+              </h2>
+              <p className="text-[11px] font-medium text-gray-500 mb-5">
+                Your documents are under review. You’ll be notified once verified.
+              </p>
+
+              <div className="space-y-3">
+                <VerificationStatusRow
+                  documentType="schoolId"
+                  label="School ID Card"
+                  url={docStatus.documents?.schoolId}
+                  status={docStatus.verificationStatus}
+                  onUploadSuccess={(res) => setDocStatus(prev => ({
+                    ...prev,
+                    verificationStatus: res.verificationStatus,
+                    documents: { ...prev.documents, schoolId: res.url },
+                  }))}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── STATS ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">

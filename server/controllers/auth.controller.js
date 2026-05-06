@@ -98,6 +98,19 @@ exports.getMe = (req, res) => {
   res.json({ success: true, user: req.user });
 };
 
+// PATCH /api/auth/role
+exports.updateRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!role) return res.status(400).json({ success: false, message: 'Role is required' });
+    const user = await User.findByIdAndUpdate(req.user._id, { role }, { new: true });
+    // Keep user in sync with token structure if needed, or just let frontend rely on state
+    res.json({ success: true, user: { id: user._id, name: user.name, email: user.email, role: user.role, isProfileComplete: user.isProfileComplete, avatar: user.avatar } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to update role' });
+  }
+};
+
 // POST /api/auth/logout
 exports.logout = (req, res) => {
   res.clearCookie('edureach_token', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });

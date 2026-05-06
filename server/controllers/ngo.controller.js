@@ -1004,12 +1004,27 @@ exports.sendCollabRequest = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Tutor not found.' });
     }
 
+    // ── Gate B: Only verified tutors can receive collab requests ──
+    const skipGate = process.env.SKIP_VERIFICATION_GATE === 'true';
+    if (!skipGate) {
+      const tutorUser = await User.findById(tutorProfile.user)
+        .select('verificationStatus')
+        .lean();
+      if (!tutorUser || tutorUser.verificationStatus !== 'approved') {
+        return res.status(403).json({
+          success: false,
+          code: 'TUTOR_NOT_VERIFIED',
+          message: 'This tutor has not been verified yet. You can only collaborate with verified tutors.',
+        });
+      }
+    }
+
     // ── Create request ───────────────────────────────────────────
     const request = await CollabRequest.create({
       ngo: ngoId,
       tutorProfile: tutorProfileId,
       tutor: tutorProfile.user,
-      subjects: collabRequest.subjects,
+      subjects: Array.isArray(subjects) ? subjects : [], 
       targetGrade: String(targetGrade).trim(),
       frequency: frequency ? String(frequency).trim() : '',
       studentCount: studentCount ? Math.max(0, Number(studentCount)) : 0,
@@ -1175,13 +1190,10 @@ exports.cancelCollabRequest = async (req, res) => {
 exports.createAssignment = async (req, res) => {
   try {
     const ngoId = req.user._id;
-    const { collabRequestId, grade, subjects, studentCount, notes } = req.body;
+    const { collabRequestId, grade, studentCount, notes } = req.body;
 
     if (!collabRequestId) {
       return res.status(400).json({ success: false, message: 'collabRequestId is required.' });
-    }
-    if (!subjects || !Array.isArray(subjects) || subjects.length === 0) {
-      return res.status(400).json({ success: false, message: 'At least one subject is required.' });
     }
     if (!grade || !String(grade).trim()) {
       return res.status(400).json({ success: false, message: 'grade is required.' });
@@ -1235,7 +1247,7 @@ exports.createAssignment = async (req, res) => {
       tutor: collabRequest.tutor,
       collabRequest: collabRequestId,
       grade: String(grade).trim(),
-      subjects: subjects.map(s => String(s).trim()).filter(Boolean),
+      subjects: collabRequest.subjects || [],
       studentCount: displayCount,
       beneficiaryIds: beneficiaryIds,
       notes: notes ? String(notes).trim() : '',

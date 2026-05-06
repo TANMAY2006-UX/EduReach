@@ -57,10 +57,6 @@ const AssignmentSchema = new mongoose.Schema({
     maxlength: 60,
   },
 
-  subjects: {
-    type:     [String],
-    required: [],
-  },
 
   // Total number of students in this group (count only — no PII)
   studentCount: {

@@ -33,7 +33,10 @@ const getCoords = (area, city) => AREA_COORDS[area] || AREA_COORDS[city] || [72.
 exports.getTutors = async (req, res) => {
   try {
     const { search = '', subject = '', area = '', sort = 'rating', page = 1, limit = 12 } = req.query;
+    const skipGate = process.env.SKIP_VERIFICATION_GATE === 'true';
     const query = { isActive: true };
+    // Gate A: hide unverified tutors from marketplace unless gate is bypassed for dev
+    if (!skipGate) query.isVerified = true;
 
     if (subject) query.subjects = { $in: [new RegExp(subject, 'i')] };
     if (area)    query.area     = new RegExp(area, 'i');
@@ -75,6 +78,7 @@ exports.getTutors = async (req, res) => {
 exports.getNearbyTutors = async (req, res) => {
   try {
     const { lat = 19.0760, lng = 72.8777, radius = 15000, subject = '', limit = 8 } = req.query;
+    const skipGate = process.env.SKIP_VERIFICATION_GATE === 'true';
     const geoQuery = {
       isActive: true,
       geoLocation: {
@@ -84,6 +88,7 @@ exports.getNearbyTutors = async (req, res) => {
         },
       },
     };
+    if (!skipGate) geoQuery.isVerified = true;
     if (subject) geoQuery.subjects = { $in: [new RegExp(subject, 'i')] };
 
     const tutors = await TutorProfile.find(geoQuery)

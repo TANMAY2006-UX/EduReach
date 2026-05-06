@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import PublicNavbar from '../layout/PublicNavbar';
 import { ngoService } from '../../services/tutorService';
+import { uploadService } from '../../services/uploadService';
+import VerificationStatusRow from '../shared/VerificationStatusRow';
 import {
   Users, Calendar, CheckCircle, Search, Star,
   Plus, X, Clock, AlertCircle, RefreshCw, Download,
@@ -482,6 +484,14 @@ export default function NgoDashboard() {
   const [exporting, setExporting] = useState(false);
   const [sendReqTutor, setSendReqTutor] = useState(null); // tutor to send collab request to
 
+  // ── Verification state ─────────────────────────────────────────
+  const [docsLoading, setDocsLoading] = useState(true);
+  const [docStatus, setDocStatus] = useState({
+    verificationStatus: 'unsubmitted',
+    verificationNote: '',
+    documents: { registrationProof: null },
+  });
+
   // ── Stats ─────────────────────────────────────────────────────
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -597,6 +607,22 @@ export default function NgoDashboard() {
   useEffect(() => { fetchStats(); }, [fetchStats]);
   useEffect(() => { fetchSessions(1, sessionFilter); setSesPage(1); }, [fetchSessions, sessionFilter]);
   useEffect(() => { fetchBeneficiaries(1, ''); }, [fetchBeneficiaries]);
+
+  // Initial fetch for documents
+  useEffect(() => {
+    const fetchDocs = async () => {
+      setDocsLoading(true);
+      try {
+        const data = await uploadService.getMyDocuments();
+        setDocStatus(data);
+      } catch (err) {
+        console.error('[DOCS] fetch error:', err.message);
+      } finally {
+        setDocsLoading(false);
+      }
+    };
+    fetchDocs();
+  }, []);
 
   // Lazy load tabs
   useEffect(() => {
@@ -731,6 +757,43 @@ export default function NgoDashboard() {
         {/* ── TAB: Overview ── */}
         {activeTab === 'overview' && (
           <div className="space-y-6 animate-fade-up delay-100">
+
+            {/* Verification Status */}
+            {!docsLoading && (
+              <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-[4px_4px_0px_0px_#E5E7EB]">
+                <h2 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-blue-600" /> Verification Status
+                </h2>
+                <p className="text-[11px] font-medium text-gray-500 mb-5">
+                  Your documents are under review. You’ll be notified once verified.
+                </p>
+
+                <div className="space-y-3">
+                  <VerificationStatusRow
+                    documentType="registrationProof"
+                    label="NGO Registration Proof (80G / 12A / Trust Deed)"
+                    url={docStatus.documents?.registrationProof}
+                    status={docStatus.verificationStatus}
+                    onUploadSuccess={(res) => setDocStatus(prev => ({
+                      ...prev,
+                      verificationStatus: res.verificationStatus,
+                      documents: { ...prev.documents, registrationProof: res.url },
+                    }))}
+                  />
+                  <VerificationStatusRow
+                    documentType="aadhaar"
+                    label="Aadhaar Card (Government ID)"
+                    url={docStatus.documents?.aadhaar}
+                    status={docStatus.verificationStatus}
+                    onUploadSuccess={(res) => setDocStatus(prev => ({
+                      ...prev,
+                      verificationStatus: res.verificationStatus,
+                      documents: { ...prev.documents, aadhaar: res.url },
+                    }))}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Primary Action Card */}
             <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-[4px_4px_0px_0px_#E5E7EB]">

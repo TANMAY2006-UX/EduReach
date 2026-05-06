@@ -25,6 +25,37 @@ const UserSchema = new mongoose.Schema({
   isProfileComplete: { type: Boolean, default: false },
   isVerified:        { type: Boolean, default: false },  // tutor: admin-verified credential
 
+  // ── Verification system ────────────────────────────────────────
+  // Status transitions: unsubmitted → pending → approved | rejected
+  // Triggers: any document upload → 'pending'. Admin action → 'approved'/'rejected'.
+  verificationStatus: {
+    type:    String,
+    enum:    ['unsubmitted', 'pending', 'approved', 'rejected'],
+    default: 'unsubmitted',
+  },
+
+  // Populated by admin on rejection — shown to the user in their dashboard.
+  verificationNote: {
+    type:     String,
+    default:  '',
+    trim:     true,
+    maxlength: 300,
+  },
+
+  // ── Documents (role-specific) ──────────────────────────────────
+  // Cloudinary secure_url values. aadhaar is select:false — NEVER returned
+  // in public or user-facing API responses. Admin explicitly selects it.
+  documents: {
+    // Tutor
+    degree:            { type: String, default: null },
+    certifications:    { type: [String], default: [] },
+    aadhaar:           { type: String, default: null, select: false }, // NEVER expose
+    // Student (B2C only)
+    schoolId:          { type: String, default: null },
+    // NGO
+    registrationProof: { type: String, default: null },
+  },
+
   // ── Contact ────────────────────────────────────────────────
   phone: { type: String, default: null },
 

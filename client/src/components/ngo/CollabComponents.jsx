@@ -28,14 +28,16 @@ const COLLAB_STATUS = {
 
 // ── Send Collaboration Request Modal ─────────────────────────────
 export function SendRequestModal({ tutor, onClose, onSend }) {
-  const [subjects, setSubjects] = useState(tutor.subjects?.slice(0, 1) || []);
+  const [subjects] = useState(
+  tutor.subjects && tutor.subjects.length > 0
+    ? tutor.subjects
+    : ['General']
+);
   const [grade, setGrade] = useState('');
   const [frequency, setFrequency] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const toggle = s => setSubjects(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
 
   const handleSend = async () => {
     if (!subjects.length) { setError('Select at least one subject.'); return; }
@@ -108,10 +110,9 @@ export function CreateAssignmentModal({ request, onClose, onCreate }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const toggle = s => setSubjects(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
-
   const handleCreate = async () => {
     if (!grade) { setError('Grade is required.'); return; }
+    setLoading(true); setError('');
     try {
       await onCreate(request._id, {
         grade,
@@ -143,7 +144,21 @@ export function CreateAssignmentModal({ request, onClose, onCreate }) {
               {GRADE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
-        
+
+          <div>
+            <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
+              Number of Students
+            </label>
+
+            <input
+              type="number"
+              min="1"
+              value={studentCount}
+              onChange={(e) => setStudentCount(e.target.value)}
+              className="w-full h-11 px-4 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
           <div>
             <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Private Notes <span className="text-gray-300 normal-case font-normal">(not shown to tutor)</span></label>
             <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Internal notes for your records..."

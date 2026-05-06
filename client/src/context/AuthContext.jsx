@@ -111,6 +111,13 @@ export const AuthProvider = ({ children }) => {
     return res.data.user;
   };
 
+  const updateRole = async (role) => {
+    const res = await api.patch('/auth/role', { role });
+    setUser(res.data.user);
+    // Don't broadcast login here, as it's just a mid-onboarding update, but you could.
+    return res.data.user;
+  };
+
   const refreshUser = async () => {
     const u = await fetchMe();
     if (u) broadcastLogin();
@@ -127,6 +134,7 @@ export const AuthProvider = ({ children }) => {
       register,
       logout,
       completeOnboarding,
+      updateRole,
       refreshUser,
       setUser,
     }}>

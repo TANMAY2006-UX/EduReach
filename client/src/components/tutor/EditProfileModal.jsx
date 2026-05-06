@@ -1,6 +1,8 @@
-import { useState } from 'react';
-import { X, IndianRupee, Book, User as UserIcon, Monitor, MapPin, Plus, Trash2, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, IndianRupee, Book, User as UserIcon, Monitor, MapPin, Plus, Trash2, Clock, ShieldCheck } from 'lucide-react';
 import { tutorService } from '../../services/tutorService';
+import { uploadService } from '../../services/uploadService';
+import VerificationStatusRow from '../shared/VerificationStatusRow';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -17,6 +19,14 @@ export default function EditProfileModal({ profile, onClose, onSuccess }) {
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState('');
 
+  // Verification documents state
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [docStatus, setDocStatus]     = useState({
+    verificationStatus: 'unsubmitted',
+    verificationNote:   '',
+    documents:          { degree: null, certifications: [], aadhaar: null },
+  });
+
   const [form, setForm] = useState({
     hourlyRate: profile.hourlyRate || 0,
     bio:        profile.bio || '',
@@ -29,6 +39,16 @@ export default function EditProfileModal({ profile, onClose, onSuccess }) {
   const [slots, setSlots] = useState(
     profile.availability?.length ? [...profile.availability] : []
   );
+
+  // Load document status when verification tab is opened
+  useEffect(() => {
+    if (activeTab !== 'verification' || docsLoading || docStatus.verificationStatus !== 'unsubmitted') return;
+    setDocsLoading(true);
+    uploadService.getMyDocuments()
+      .then(data => setDocStatus(data))
+      .catch(err => console.error('[DOCS] load error:', err.message))
+      .finally(() => setDocsLoading(false));
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -110,6 +130,7 @@ export default function EditProfileModal({ profile, onClose, onSuccess }) {
           {[
             { key: 'profile',      label: 'Profile & Pricing' },
             { key: 'availability', label: 'My Availability' },
+            { key: 'verification', label: 'Verification' },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className={`flex-1 py-3 text-xs font-black uppercase tracking-wide transition-colors ${activeTab === tab.key ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-gray-400 hover:text-gray-600'}`}>
@@ -256,6 +277,90 @@ export default function EditProfileModal({ profile, onClose, onSuccess }) {
                 <p className="text-center text-[11px] text-gray-400 font-bold py-2">
                   No availability set. Students will see "Flexible schedule — discuss with tutor."
                 </p>
+              )}
+            </div>
+          )}
+          {/* ── VERIFICATION TAB ── */}
+          {activeTab === 'verification' && (
+            <div className="space-y-6">
+              {/* Status banner */}
+              {(() => {
+                const s = docStatus.verificationStatus;
+                if (s === 'approved') return (
+                  <div className="flex items-center gap-2 bg-green-50 border-2 border-green-200 rounded-xl px-4 py-3">
+                    <ShieldCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <p className="text-xs font-black text-green-700">Your account is verified. Documents have been reviewed and approved.</p>
+                  </div>
+                );
+                if (s === 'pending') return (
+                  <div className="flex items-center gap-2 bg-amber-50 border-2 border-amber-200 rounded-xl px-4 py-3">
+                    <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <p className="text-xs font-black text-amber-700">Your documents are under review. We'll notify you once verification is complete.</p>
+                  </div>
+                );
+                if (s === 'rejected') return (
+                  <div className="flex items-center gap-2 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3">
+                    <p className="text-xs font-black text-red-700">
+                      <span className="block mb-0.5">Documents rejected.</span>
+                      {docStatus.verificationNote && <span className="font-medium">{docStatus.verificationNote}</span>}
+                      <span className="block font-medium mt-0.5">Please re-upload corrected documents below.</span>
+                    </p>
+                  </div>
+                );
+                return (
+                  <div className="bg-blue-50 border-2 border-blue-100 rounded-xl px-4 py-3">
+                    <p className="text-[11px] font-bold text-blue-700 leading-relaxed">
+                      Upload your credentials to get verified. Verified tutors appear in search results and can collaborate with NGOs.
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {docsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <VerificationStatusRow
+                    documentType="degree"
+                    label="Degree / Teaching Certificate"
+                    url={docStatus.documents?.degree}
+                    status={docStatus.verificationStatus}
+                    onUploadSuccess={(res) => setDocStatus(prev => ({
+                      ...prev,
+                      verificationStatus: res.verificationStatus,
+                      documents: { ...prev.documents, degree: res.url },
+                    }))}
+                  />
+
+                  <VerificationStatusRow
+                    documentType="certifications"
+                    label="Additional Certifications"
+                    url={docStatus.documents?.certifications}
+                    status={docStatus.verificationStatus}
+                    onUploadSuccess={(res) => setDocStatus(prev => ({
+                      ...prev,
+                      verificationStatus: res.verificationStatus,
+                      documents: { ...prev.documents, certifications: res.urls || prev.documents.certifications },
+                    }))}
+                  />
+
+                  <VerificationStatusRow
+                    documentType="aadhaar"
+                    label="Aadhaar Card (Government ID)"
+                    url={docStatus.documents?.aadhaar}
+                    status={docStatus.verificationStatus}
+                    onUploadSuccess={(res) => setDocStatus(prev => ({
+                      ...prev,
+                      verificationStatus: res.verificationStatus,
+                      documents: { ...prev.documents, aadhaar: res.url }, // Although backend might not return it, the local state will update to show it was re-uploaded
+                    }))}
+                  />
+                  <p className="text-[10px] text-gray-400 font-medium pt-2">
+                    * Aadhaar is stored securely and is never shown publicly. It is only reviewed by EduReach admins.
+                  </p>
+                </div>
               )}
             </div>
           )}

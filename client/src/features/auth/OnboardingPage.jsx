@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { uploadService } from '../../services/uploadService';
+import DocumentUpload from '../../components/shared/DocumentUpload';
 import {
   GraduationCap, BookOpen, Users,
   Phone, MapPin, BookMarked, ChevronRight,
@@ -158,12 +160,24 @@ function PillSelect({ options, selected, onChange, max }) {
 
 // ─── Main component ──────────────────────────────────────────
 export default function OnboardingPage() {
-  const { completeOnboarding, user } = useAuth();
+  const { completeOnboarding, updateRole, user } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep]     = useState(0);
   const [error, setError]   = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const [docStatus, setDocStatus] = useState({ documents: {} });
+  const [docsLoading, setDocsLoading] = useState(false);
+
+  // Fetch existing docs if any
+  useEffect(() => {
+    setDocsLoading(true);
+    uploadService.getMyDocuments()
+      .then(res => setDocStatus(res))
+      .catch(err => console.error('[DOCS]', err))
+      .finally(() => setDocsLoading(false));
+  }, []);
 
   const [data, setData] = useState({
     role: '',
@@ -188,7 +202,8 @@ export default function OnboardingPage() {
 
   const isTutor   = data.role === 'tutor';
   const isStudent = data.role === 'student';
-  const TOTAL_STEPS = isTutor ? 4 : 3;
+  const isNgo     = data.role === 'ngo';
+  const TOTAL_STEPS = isTutor ? 5 : 4;
 
   // ── Step validation ────────────────────────────────────────
   const validateStep = () => {
@@ -209,8 +224,24 @@ export default function OnboardingPage() {
       if (!data.bio.trim() || data.bio.trim().length < 30)
         return 'Please write a short bio (at least 30 characters).';
     }
+    
+    // Verification Docs step
+    const docStep = isTutor ? 3 : 2;
+    if (step === docStep) {
+      const docs = docStatus.documents || {};
+      if (isStudent && !docs.schoolId) return 'Please upload your School ID Card.';
+      if (isTutor) {
+        if (!docs.degree) return 'Please upload your Degree / Teaching Certificate.';
+        if (!docs.aadhaar) return 'Please upload your Aadhaar Card.';
+      }
+      if (isNgo) {
+        if (!docs.registrationProof) return 'Please upload your NGO Registration Proof.';
+        if (!docs.aadhaar) return 'Please upload your Aadhaar Card.';
+      }
+    }
+
     // Location step (last for both)
-    const locationStep = isTutor ? 3 : 2;
+    const locationStep = isTutor ? 4 : 3;
     if (step === locationStep) {
       if (!data.city) return 'Please select your city.';
       if (!data.area) return 'Please select your area / locality.';
@@ -218,10 +249,24 @@ export default function OnboardingPage() {
     return '';
   };
 
-  const next = () => {
+  const next = async () => {
     const err = validateStep();
     if (err) { setError(err); return; }
     setError('');
+
+    // If leaving step 0, save the role immediately so document uploads can work
+    if (step === 0 && data.role) {
+      setLoading(true);
+      try {
+        await updateRole(data.role);
+      } catch (e) {
+        setError(e.response?.data?.message || 'Failed to save role');
+        setLoading(false);
+        return;
+      }
+      setLoading(false);
+    }
+
     setStep(s => s + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -259,7 +304,8 @@ export default function OnboardingPage() {
     }
   };
 
-  const locationStep = isTutor ? 3 : 2;
+  const docStep = isTutor ? 3 : 2;
+  const locationStep = isTutor ? 4 : 3;
 
   return (
     <div className="min-h-screen bg-[#f8f9fc] flex flex-col">
@@ -465,6 +511,102 @@ export default function OnboardingPage() {
                   <p className="text-xs font-bold text-gray-400 mt-2">Minimum 30 characters</p>
                 </div>
               </div>
+
+              <NavButtons onNext={next} onBack={back} />
+            </div>
+          )}
+
+          {/* ─── STEP 3/2: Verification Documents ─────────── */}
+          {step === docStep && (
+            <div className="animate-fade-up">
+              <h2 className="text-[28px] font-black text-gray-900 tracking-tight mb-2">Verify your identity</h2>
+              <p className="text-sm font-medium text-gray-500 mb-8">
+                Upload your documents to unlock platform features. We keep your data secure.
+              </p>
+
+              {docsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {isStudent && (
+                    <DocumentUpload
+                      documentType="schoolId"
+                      label="School ID Card *"
+                      currentUrl={docStatus.documents?.schoolId}
+                      multi={false}
+                      verificationStatus={docStatus.verificationStatus}
+                      onUploadSuccess={(res) => setDocStatus(prev => ({
+                        ...prev, documents: { ...prev.documents, schoolId: res.url }
+                      }))}
+                    />
+                  )}
+
+                  {isTutor && (
+                    <>
+                      <DocumentUpload
+                        documentType="degree"
+                        label="Degree / Teaching Certificate *"
+                        currentUrl={docStatus.documents?.degree}
+                        multi={false}
+                        verificationStatus={docStatus.verificationStatus}
+                        onUploadSuccess={(res) => setDocStatus(prev => ({
+                          ...prev, documents: { ...prev.documents, degree: res.url }
+                        }))}
+                      />
+                      <DocumentUpload
+                        documentType="aadhaar"
+                        label="Aadhaar Card (Government ID) *"
+                        currentUrl={docStatus.documents?.aadhaar}
+                        multi={false}
+                        verificationStatus={docStatus.verificationStatus}
+                        onUploadSuccess={(res) => setDocStatus(prev => ({
+                          ...prev, documents: { ...prev.documents, aadhaar: res.url }
+                        }))}
+                      />
+                      <DocumentUpload
+                        documentType="certifications"
+                        label="Additional Certifications (Optional)"
+                        currentUrl={docStatus.documents?.certifications}
+                        multi={true}
+                        verificationStatus={docStatus.verificationStatus}
+                        onUploadSuccess={(res) => setDocStatus(prev => ({
+                          ...prev, documents: { ...prev.documents, certifications: res.urls || prev.documents.certifications }
+                        }))}
+                      />
+                    </>
+                  )}
+
+                  {isNgo && (
+                    <>
+                      <DocumentUpload
+                        documentType="registrationProof"
+                        label="NGO Registration Proof (80G / 12A / Trust Deed) *"
+                        currentUrl={docStatus.documents?.registrationProof}
+                        multi={false}
+                        verificationStatus={docStatus.verificationStatus}
+                        onUploadSuccess={(res) => setDocStatus(prev => ({
+                          ...prev, documents: { ...prev.documents, registrationProof: res.url }
+                        }))}
+                      />
+                      <DocumentUpload
+                        documentType="aadhaar"
+                        label="Aadhaar Card (Authorized Signatory) *"
+                        currentUrl={docStatus.documents?.aadhaar}
+                        multi={false}
+                        verificationStatus={docStatus.verificationStatus}
+                        onUploadSuccess={(res) => setDocStatus(prev => ({
+                          ...prev, documents: { ...prev.documents, aadhaar: res.url }
+                        }))}
+                      />
+                    </>
+                  )}
+                  <p className="text-[10px] text-gray-400 font-medium pt-2">
+                    * Required documents. Aadhaar is stored securely and never shown publicly.
+                  </p>
+                </div>
+              )}
 
               <NavButtons onNext={next} onBack={back} />
             </div>
