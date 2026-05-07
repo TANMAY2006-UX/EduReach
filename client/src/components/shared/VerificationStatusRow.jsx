@@ -11,19 +11,29 @@ export default function VerificationStatusRow({
 }) {
   const [isReuploading, setIsReuploading] = useState(false);
 
-  // If there's no URL and status is unsubmitted, we just show missing text or a placeholder
-  const fileName = url ? url.split('/').pop().split('?')[0] : 'No file uploaded';
+  let fileName = 'No file uploaded';
+
+  if (typeof url === 'string' && url) {
+    fileName = url.split('/').pop().split('?')[0];
+  } else if (Array.isArray(url) && url.length > 0) {
+    fileName = url[0].split('/').pop().split('?')[0]; // show first file
+  }
 
   const badgeConfig = {
     approved: { icon: CheckCircle, label: 'Verified', color: 'bg-green-50 text-green-700 border-green-200' },
-    pending:  { icon: Clock,       label: 'Pending',  color: 'bg-amber-50 text-amber-700 border-amber-200' },
-    rejected: { icon: XCircle,     label: 'Rejected', color: 'bg-red-50 text-red-600 border-red-200' },
-    unsubmitted: { icon: Clock,    label: 'Missing',  color: 'bg-gray-50 text-gray-500 border-gray-200' },
+    pending: { icon: Clock, label: 'Pending', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+    rejected: { icon: XCircle, label: 'Rejected', color: 'bg-red-50 text-red-600 border-red-200' },
+    unsubmitted: { icon: Clock, label: 'Missing', color: 'bg-gray-50 text-gray-500 border-gray-200' },
   };
 
   const currentStatus = badgeConfig[status] || badgeConfig.unsubmitted;
   const BadgeIcon = currentStatus.icon;
 
+  const hasFile =
+    (typeof url === 'string' && url) ||
+    (Array.isArray(url) && url.length > 0);
+
+  const fileUrl = Array.isArray(url) ? url[0] : url;
   if (isReuploading) {
     return (
       <div className="mt-2 p-4 border-2 border-gray-200 rounded-xl bg-gray-50">
@@ -64,17 +74,6 @@ export default function VerificationStatusRow({
         <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full border ${currentStatus.color}`}>
           <BadgeIcon className="w-2.5 h-2.5" /> {currentStatus.label}
         </span>
-
-        {url && (
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1 text-[10px] font-black text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors"
-          >
-            View <ExternalLink className="w-2.5 h-2.5" />
-          </a>
-        )}
 
         {status === 'rejected' && (
           <button

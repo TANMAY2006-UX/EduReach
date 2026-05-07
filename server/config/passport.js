@@ -14,7 +14,8 @@ passport.use(new LocalStrategy(
       }
       const isMatch = await user.matchPassword(password);
       if (!isMatch) return done(null, false, { message: 'Invalid credentials' });
-      return done(null, user);
+      const freshUser = await User.findById(user._id);
+      return done(null, freshUser);
     } catch (err) {
       return done(err);
     }
@@ -51,7 +52,9 @@ passport.use(new GoogleStrategy({
           });
         }
       }
-      return done(null, user);
+      const freshUser = await User.findById(user._id);
+
+      return done(null, freshUser);
     } catch (err) {
       return done(err);
     }

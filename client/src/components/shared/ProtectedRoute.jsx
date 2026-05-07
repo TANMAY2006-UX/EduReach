@@ -67,7 +67,7 @@ export function RoleRedirect() {
     student: '/student/dashboard',
     tutor:   '/tutor-dash/dashboard',
     ngo:     '/ngo/dashboard',
-    admin:   '/ngo/dashboard',
+    admin:   '/admin/dashboard',
   };
   return <Navigate to={map[user?.role] || '/onboarding'} replace />;
 }

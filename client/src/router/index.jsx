@@ -23,6 +23,11 @@ import StudentDashboard from '../components/student/StudentDashboard';
 import TutorDashboard   from '../components/tutor/TutorDashboard';
 import NgoDashboard     from '../components/ngo/NgoDashboard';
 
+// Admin pages
+import AdminLayout       from '../features/admin/AdminLayout';
+import AdminDashboard    from '../features/admin/AdminDashboard';
+import VerificationQueue from '../features/admin/VerificationQueue';
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
@@ -51,7 +56,14 @@ export default function AppRouter() {
           {/* Protected dashboards */}
           <Route path="/student/*" element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>} />
           <Route path="/tutor-dash/*" element={<ProtectedRoute allowedRoles={['tutor']}><TutorDashboard /></ProtectedRoute>} />
-          <Route path="/ngo/*"     element={<ProtectedRoute allowedRoles={['ngo','admin']}><NgoDashboard /></ProtectedRoute>} />
+          <Route path="/ngo/*"     element={<ProtectedRoute allowedRoles={['ngo']}><NgoDashboard /></ProtectedRoute>} />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout /></ProtectedRoute>}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="verifications" element={<VerificationQueue />} />
+          </Route>
 
           {/* 404 */}
           <Route path="*" element={<Navigate to="/browse" replace />} />

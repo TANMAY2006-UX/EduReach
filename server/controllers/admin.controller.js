@@ -111,3 +111,27 @@ exports.verifyUser = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to update verification.' });
   }
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/admin/stats
+// Returns basic platform metrics for the admin dashboard
+// ─────────────────────────────────────────────────────────────────────────────
+exports.getAdminStats = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const pendingVerifications = await User.countDocuments({ verificationStatus: 'pending' });
+    const verifiedUsers = await User.countDocuments({ verificationStatus: 'approved' });
+
+    res.json({
+      success: true,
+      stats: {
+        totalUsers,
+        pendingVerifications,
+        verifiedUsers
+      }
+    });
+  } catch (err) {
+    console.error('[ADMIN] getAdminStats error:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to fetch admin stats.' });
+  }
+};

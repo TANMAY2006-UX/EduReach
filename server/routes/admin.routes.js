@@ -15,6 +15,7 @@ const router  = express.Router();
 const {
   getPendingVerifications,
   verifyUser,
+  getAdminStats,
 } = require('../controllers/admin.controller');
 
 const { protect, requireRole } = require('../middleware/auth.middleware');
@@ -22,6 +23,7 @@ const { protect, requireRole } = require('../middleware/auth.middleware');
 router.use(protect);
 router.use(requireRole('admin'));
 
+router.get('/stats',              getAdminStats);
 router.get('/verifications',      getPendingVerifications);
 router.patch('/verify/:userId',   verifyUser);
 
