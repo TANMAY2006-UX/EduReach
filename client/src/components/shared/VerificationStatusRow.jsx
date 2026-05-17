@@ -75,6 +75,17 @@ export default function VerificationStatusRow({
           <BadgeIcon className="w-2.5 h-2.5" /> {currentStatus.label}
         </span>
 
+        {hasFile && fileUrl && (
+          <a
+            href={fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[10px] font-black text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors shadow-sm"
+          >
+            View <ExternalLink className="w-2.5 h-2.5" />
+          </a>
+        )}
+
         {status === 'rejected' && (
           <button
             onClick={() => setIsReuploading(true)}

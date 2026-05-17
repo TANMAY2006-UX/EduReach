@@ -50,16 +50,18 @@ export default function VerificationQueue() {
   const renderDocumentLink = (label, url) => {
     if (!url) return null;
     return (
-      <div className="flex items-center justify-between p-3 bg-gray-50 border-2 border-gray-200 rounded-xl mb-2">
-        <div className="flex items-center gap-2">
-          <FileText className="w-5 h-5 text-gray-500" />
+      <div className="flex items-center justify-between p-3 bg-white border-2 border-gray-200 rounded-xl mb-3 hover:border-blue-300 hover:shadow-sm transition-all group">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+            <FileText className="w-4 h-4 text-blue-600" />
+          </div>
           <span className="font-bold text-gray-700">{label}</span>
         </div>
         <a 
           href={url} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 font-bold text-sm flex items-center gap-1"
+          className="text-blue-600 hover:text-white font-bold text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-transparent hover:bg-blue-600 transition-colors"
         >
           View <ExternalLink className="w-4 h-4" />
         </a>
@@ -122,18 +124,18 @@ export default function VerificationQueue() {
                 <tr><td colSpan="5" className="p-8 text-center font-bold text-gray-400">No users found.</td></tr>
               ) : (
                 filteredUsers.map(user => (
-                  <tr key={user._id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={user._id} className="hover:bg-blue-50/50 transition-colors group">
                     <td className="p-4">
-                      <p className="font-bold text-gray-900">{user.name}</p>
+                      <p className="font-bold text-gray-900 group-hover:text-blue-900 transition-colors">{user.name}</p>
                       <p className="text-xs font-medium text-gray-500">{user.email}</p>
                     </td>
                     <td className="p-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold capitalize bg-gray-100 text-gray-800 border-2 border-gray-200">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold capitalize bg-gray-100 text-gray-800 border-2 border-gray-200 shadow-sm">
                         {user.role}
                       </span>
                     </td>
                     <td className="p-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border-2 ${
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border-2 shadow-sm ${
                         user.verificationStatus === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
                         user.verificationStatus === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
                         'bg-amber-100 text-amber-800 border-amber-200'
@@ -147,7 +149,7 @@ export default function VerificationQueue() {
                     <td className="p-4 text-right">
                       <button 
                         onClick={() => setSelectedUser(user)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 border-gray-200 rounded-lg text-sm font-bold hover:bg-gray-50 hover:border-blue-400 transition-colors shadow-[2px_2px_0px_0px_#D1D5DB]"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 border-gray-200 rounded-lg text-sm font-bold hover:bg-blue-600 hover:text-white hover:border-blue-700 transition-all shadow-[2px_2px_0px_0px_#D1D5DB] hover:shadow-none hover:translate-y-[2px]"
                       >
                         <Eye className="w-4 h-4" /> Review
                       </button>
@@ -186,16 +188,18 @@ export default function VerificationQueue() {
                 
                 {/* Aadhaar (Highly sensitive, admin only) */}
                 {selectedUser.documents?.aadhaar && (
-                  <div className="flex items-center justify-between p-3 bg-red-50 border-2 border-red-200 rounded-xl mb-2">
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-red-500" />
-                      <span className="font-bold text-red-800">Aadhaar Card (Sensitive)</span>
+                  <div className="flex items-center justify-between p-3 bg-red-50 border-2 border-red-200 rounded-xl mb-3 hover:border-red-300 hover:shadow-sm transition-all group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                        <Shield className="w-4 h-4 text-red-600" />
+                      </div>
+                      <span className="font-black text-red-800 tracking-tight">Aadhaar Card (Sensitive)</span>
                     </div>
                     <a 
                       href={selectedUser.documents?.aadhaar} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-red-700 hover:text-red-900 font-bold text-sm flex items-center gap-1"
+                      className="text-red-700 hover:text-white font-bold text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-red-200 hover:border-red-600 hover:bg-red-600 transition-colors"
                     >
                       View <ExternalLink className="w-4 h-4" />
                     </a>
